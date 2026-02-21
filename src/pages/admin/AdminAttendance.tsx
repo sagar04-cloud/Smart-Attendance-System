@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Calendar, Filter } from 'lucide-react';
+import { Search, Calendar } from 'lucide-react';
 import {
     getAttendance, getUsers, getSubjects, getClasses,
     AttendanceRecord, User, Subject, ClassSection

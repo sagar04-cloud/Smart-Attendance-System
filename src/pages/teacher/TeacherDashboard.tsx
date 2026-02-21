@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
-    QrCode, Users, CalendarCheck, BookOpen, Clock, TrendingUp
+    Users, CalendarCheck, BookOpen, Clock
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import {
-    getSubjectsByTeacher, getClasses, getAttendance, getUsers,
+    getSubjectsByTeacher, getClasses, getAttendance,
     Subject, ClassSection
 } from '../../store/data';
 

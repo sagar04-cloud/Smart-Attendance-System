@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
     LayoutDashboard, Users, BookOpen, CalendarCheck, BarChart3,
-    QrCode, ClipboardList, GraduationCap, ScanLine, LogOut, Settings,
+    QrCode, ClipboardList, GraduationCap, ScanLine, LogOut,
     Building2
 } from 'lucide-react';
 
