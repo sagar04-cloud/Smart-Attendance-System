@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, BarChart3, Users, BookOpen, TrendingUp, FileText } from 'lucide-react';
+import { Download, BarChart3, Users, BookOpen, FileText } from 'lucide-react';
 import {
     getUsers, getSubjects, getClasses, getAttendance,
     getAttendancePercentage, User, Subject, ClassSection
@@ -11,7 +11,7 @@ const AdminReports: React.FC = () => {
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [classes, setClasses] = useState<ClassSection[]>([]);
     const [selectedClass, setSelectedClass] = useState('');
-    const [selectedSubject, setSelectedSubject] = useState('');
+
     const { showToast } = useToast();
 
     useEffect(() => {
