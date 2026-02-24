@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Download, BarChart3 } from 'lucide-react';
+import { Download, BarChart3, Check, X, Clock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
     getSubjectsByTeacher, getClasses, getStudentsByClass,
-    getAttendancePercentage, Subject, ClassSection
+    getAttendancePercentage, getAttendanceBySubject,
+    Subject, ClassSection
 } from '../../store/data';
 
 const TeacherReports: React.FC = () => {
@@ -23,10 +24,26 @@ const TeacherReports: React.FC = () => {
     const selectedSub = subjects.find(s => s.id === selectedSubject);
     const students = selectedSub ? getStudentsByClass(selectedSub.classId) : [];
 
-    const studentData = students.map(student => ({
-        student,
-        percentage: getAttendancePercentage(student.id, selectedSubject),
-    })).sort((a, b) => b.percentage - a.percentage);
+    // Get all attendance records for this subject to find unique session dates
+    const subjectAttendance = selectedSub ? getAttendanceBySubject(selectedSub.id) : [];
+
+    // Extract unique dates, sort chronologically
+    const uniqueDates = Array.from(new Set(subjectAttendance.map(a => a.date))).sort();
+
+    const studentData = students.map(student => {
+        // Find attendance status for each date
+        const dateStatuses: Record<string, string> = {};
+        uniqueDates.forEach(date => {
+            const record = subjectAttendance.find(a => a.studentId === student.id && a.date === date);
+            dateStatuses[date] = record ? record.status : '-'; // '-' means no record (e.g. absent/not enrolled)
+        });
+
+        return {
+            student,
+            percentage: getAttendancePercentage(student.id, selectedSubject),
+            dateStatuses
+        };
+    }).sort((a, b) => b.percentage - a.percentage);
 
     const avgPercentage = studentData.length > 0
         ? Math.round(studentData.reduce((acc, s) => acc + s.percentage, 0) / studentData.length)
@@ -37,19 +54,44 @@ const TeacherReports: React.FC = () => {
 
     const exportCSV = () => {
         if (!selectedSub) return;
-        const headers = ['Student Name', 'Roll No', 'Attendance %', 'Status'];
-        const rows = studentData.map(({ student, percentage }) => [
-            student.name,
-            student.rollNo || '',
-            `${percentage}%`,
-            percentage >= 75 ? 'Good' : percentage >= 50 ? 'Warning' : 'Critical',
-        ]);
-        const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+
+        // Headers: Student, Roll No, [Date 1], [Date 2], ..., Overall %, Status
+        const headers = [
+            'Student Name',
+            'Roll No',
+            ...uniqueDates.map(d => {
+                // Short date format e.g. "Feb 24"
+                const dateObj = new Date(d);
+                return `${dateObj.toLocaleString('default', { month: 'short' })} ${dateObj.getDate()}`;
+            }),
+            'Overall %',
+            'Status'
+        ];
+
+        const rows = studentData.map(({ student, percentage, dateStatuses }) => {
+            const statuses = uniqueDates.map(date => {
+                const s = dateStatuses[date];
+                if (s === 'present') return 'P';
+                if (s === 'absent') return 'A';
+                if (s === 'late') return 'L';
+                return '-';
+            });
+
+            return [
+                student.name,
+                student.rollNo || '',
+                ...statuses,
+                `${percentage}%`,
+                percentage >= 75 ? 'Good' : percentage >= 50 ? 'Warning' : 'Critical',
+            ];
+        });
+
+        const csv = [headers, ...rows].map(r => r.map(cell => `"${cell}"`).join(',')).join('\n');
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${selectedSub.code}_report.csv`;
+        a.download = `${selectedSub.code}_attendance_split_${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         URL.revokeObjectURL(url);
         showToast('Report exported!', 'success');
@@ -61,10 +103,11 @@ const TeacherReports: React.FC = () => {
         return 'var(--red-light)';
     };
 
-    const getProgressClass = (pct: number) => {
-        if (pct >= 75) return 'green';
-        if (pct >= 50) return 'yellow';
-        return 'red';
+    const renderStatusIcon = (status: string) => {
+        if (status === 'present') return <Check size={16} strokeWidth={3} style={{ color: 'var(--green-light)' }} />;
+        if (status === 'absent') return <X size={16} strokeWidth={3} style={{ color: 'var(--red-light)' }} />;
+        if (status === 'late') return <Clock size={16} strokeWidth={3} style={{ color: 'var(--yellow-light)' }} />;
+        return <span style={{ color: 'var(--text-muted)' }}>-</span>;
     };
 
     return (
@@ -72,8 +115,8 @@ const TeacherReports: React.FC = () => {
             <div className="page-header">
                 <div className="page-header-row">
                     <div>
-                        <h2>Reports</h2>
-                        <p>Generate and export attendance reports for your subjects</p>
+                        <h2>Day-by-Day Reports</h2>
+                        <p>Generate and export detailed split attendance reports for your subjects</p>
                     </div>
                     {selectedSubject && (
                         <button className="btn btn-primary" onClick={exportCSV}>
@@ -104,7 +147,7 @@ const TeacherReports: React.FC = () => {
                         <div className="empty-state">
                             <div className="empty-state-icon"><BarChart3 size={48} /></div>
                             <h3>Select a Subject</h3>
-                            <p>Choose a subject to generate its attendance report.</p>
+                            <p>Choose a subject to generate its detailed attendance report.</p>
                         </div>
                     </div>
                 </div>
@@ -126,33 +169,44 @@ const TeacherReports: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Student-wise report */}
+                    {/* Student-wise Split Report */}
                     <div className="table-container">
                         <table className="data-table">
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Student</th>
+                                    <th style={{ minWidth: 150 }}>Student</th>
                                     <th>Roll No</th>
-                                    <th>Attendance</th>
-                                    <th>Percentage</th>
+                                    {/* Dynamically render columns for each date */}
+                                    {uniqueDates.map(dateStr => {
+                                        const d = new Date(dateStr);
+                                        return (
+                                            <th key={dateStr} style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                                                {d.toLocaleString('default', { month: 'short' })}<br />
+                                                {d.getDate()}
+                                            </th>
+                                        );
+                                    })}
+                                    {uniqueDates.length === 0 && <th>No Sessions Yet</th>}
+                                    <th style={{ minWidth: 100 }}>Overall %</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {studentData.map(({ student, percentage }, i) => (
+                                {studentData.map(({ student, percentage, dateStatuses }, i) => (
                                     <tr key={student.id}>
                                         <td>{i + 1}</td>
                                         <td style={{ fontWeight: 600 }}>{student.name}</td>
                                         <td><span className="badge badge-purple">{student.rollNo}</span></td>
-                                        <td>
-                                            <div className="progress-bar" style={{ width: 100 }}>
-                                                <div
-                                                    className={`progress-bar-fill ${getProgressClass(percentage)}`}
-                                                    style={{ width: `${percentage}%` }}
-                                                ></div>
-                                            </div>
-                                        </td>
+
+                                        {/* Render status cells for each date */}
+                                        {uniqueDates.map(date => (
+                                            <td key={date} style={{ textAlign: 'center' }}>
+                                                {renderStatusIcon(dateStatuses[date])}
+                                            </td>
+                                        ))}
+                                        {uniqueDates.length === 0 && <td style={{ color: 'var(--text-muted)' }}>-</td>}
+
                                         <td>
                                             <span style={{ fontWeight: 700, color: getColor(percentage) }}>{percentage}%</span>
                                         </td>
@@ -176,3 +230,4 @@ const TeacherReports: React.FC = () => {
 };
 
 export default TeacherReports;
+
