@@ -209,7 +209,7 @@ const initFirebaseSync = () => {
 
   // Subscribe to Firebase changes
   const dbRef = ref(db, STORAGE_KEY);
-  onValue(dbRef, (snapshot) => {
+  onValue(dbRef, (snapshot: any) => {
     const data = snapshot.val();
     if (data) {
       // Update local storage silently whenever cloud data changes
