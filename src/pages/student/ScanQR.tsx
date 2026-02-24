@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { ScanLine, CheckCircle, XCircle, Camera, RefreshCw, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ScanLine, CheckCircle, XCircle, Camera, RefreshCw } from 'lucide-react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -17,11 +18,36 @@ const ScanQR: React.FC = () => {
     const startScanning = () => {
         setScanning(true);
         setResult(null);
-
-        // Attempt to use the device camera through html5-qrcode or similar
-        // For now we show the scanner UI and require manual code entry
-        // In production, integrate with a real QR scanner library (e.g., html5-qrcode)
     };
+
+    // --- HTML5 QR Code Scanner Setup ---
+    useEffect(() => {
+        if (!scanning) return;
+
+        // Initialize scanner on the 'qr-reader' div
+        // fps: frames per second, qrbox: scanning box dimensions
+        const scanner = new Html5QrcodeScanner(
+            "qr-reader",
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            /* verbose= */ false
+        );
+
+        scanner.render(
+            (decodedText) => {
+                // Success callback
+                scanner.clear(); // Stop scanning on success
+                processQRData(decodedText);
+            },
+            () => {
+                // Error callback (ignore frequent read failures until a valid code is found)
+            }
+        );
+
+        // Cleanup on unmount or when `scanning` becomes false
+        return () => {
+            scanner.clear().catch(e => console.error("Failed to clear scanner", e));
+        };
+    }, [scanning]);
 
     const processQRData = (qrDataString: string) => {
         if (!user) return;
@@ -90,8 +116,10 @@ const ScanQR: React.FC = () => {
             showToast('Attendance marked successfully!', 'success');
             setScanning(false);
         } catch {
+            // Just assume it was a raw session ID string if JSON parse fails
+            // It might be someone accidentally scanning a barcode or random QR
             setResult('error');
-            setResultMessage('Invalid QR code. Could not read the data. Please try again or use session code.');
+            setResultMessage('Invalid QR code format. Please scan a valid QR Attend code.');
             setScanning(false);
         }
     };
@@ -103,7 +131,6 @@ const ScanQR: React.FC = () => {
             return;
         }
 
-        // Validate the manual session code against actual sessions
         const sessions = getSessions();
         const session = sessions.find(s => s.id === manualCode.trim());
 
@@ -131,7 +158,6 @@ const ScanQR: React.FC = () => {
             return;
         }
 
-        // Process via the same QR data handler
         processQRData(session.qrCode);
         setManualCode('');
     };
@@ -177,75 +203,32 @@ const ScanQR: React.FC = () => {
 
                                     <form onSubmit={handleManualSubmit}>
                                         <div className="form-group">
-                                            <label className="form-label">Enter Session Code</label>
-                                            <input className="form-input" placeholder="Enter the session ID shared by teacher"
+                                            <input className="form-input" placeholder="Enter session ID shared by teacher"
                                                 value={manualCode} onChange={e => setManualCode(e.target.value)} />
                                         </div>
-                                        <button type="submit" className="btn btn-secondary w-full" style={{ justifyContent: 'center' }}>
+                                        <button type="submit" className="btn btn-secondary w-full" style={{ justifyContent: 'center', marginTop: 12 }} disabled={!manualCode.trim()}>
                                             Submit Code
                                         </button>
                                     </form>
                                 </div>
                             ) : (
                                 <div className="scanner-container">
-                                    <div className="scanner-wrapper" style={{ background: '#111' }}>
-                                        <div className="scanner-overlay">
-                                            <div className="scanner-corner tl"></div>
-                                            <div className="scanner-corner tr"></div>
-                                            <div className="scanner-corner bl"></div>
-                                            <div className="scanner-corner br"></div>
-                                        </div>
-                                        <div style={{
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            height: '100%', flexDirection: 'column', gap: 12
-                                        }}>
-                                            <Camera size={32} style={{ color: 'var(--accent-primary-light)', opacity: 0.6 }} />
-                                            <p className="text-sm text-muted">Camera preview area</p>
-                                            <p className="text-sm" style={{ color: 'var(--yellow-light)', fontSize: 12 }}>
-                                                📷 Camera integration requires HTTPS
-                                            </p>
-                                        </div>
-                                    </div>
-
                                     <div style={{
-                                        background: 'var(--yellow-bg)', border: '1px solid rgba(245, 158, 11, 0.2)',
-                                        borderRadius: 'var(--radius-md)', padding: '14px 18px',
-                                        display: 'flex', alignItems: 'flex-start', gap: 10, width: '100%', maxWidth: 360
+                                        width: '100%',
+                                        background: 'var(--bg-primary)',
+                                        borderRadius: 'var(--radius-md)',
+                                        overflow: 'hidden',
+                                        marginBottom: 16
                                     }}>
-                                        <AlertTriangle size={18} style={{ color: 'var(--yellow-light)', flexShrink: 0, marginTop: 2 }} />
-                                        <div>
-                                            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--yellow-light)', marginBottom: 4 }}>
-                                                Use Session Code Instead
-                                            </p>
-                                            <p className="text-sm text-muted">
-                                                Camera scanning requires a secure (HTTPS) connection. Please use the session code method below or ask your teacher for the code.
-                                            </p>
-                                        </div>
+                                        {/* This is where the react scanner injects itself */}
+                                        <div id="qr-reader" style={{ width: "100%", border: "none" }}></div>
                                     </div>
 
-                                    <div style={{ width: '100%', maxWidth: 360 }}>
-                                        <form onSubmit={(e) => {
-                                            e.preventDefault();
-                                            if (manualCode.trim()) {
-                                                handleManualSubmit(e);
-                                            }
-                                        }}>
-                                            <div className="form-group">
-                                                <label className="form-label">Enter Session Code</label>
-                                                <input className="form-input" placeholder="Paste the session ID here"
-                                                    value={manualCode} onChange={e => setManualCode(e.target.value)} />
-                                            </div>
-                                            <div className="flex gap-3">
-                                                <button type="button" className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }}
-                                                    onClick={() => { setScanning(false); setManualCode(''); }}>
-                                                    Cancel
-                                                </button>
-                                                <button type="submit" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}
-                                                    disabled={!manualCode.trim()}>
-                                                    Submit Code
-                                                </button>
-                                            </div>
-                                        </form>
+                                    <div style={{ width: '100%', maxWidth: 360, margin: '0 auto' }}>
+                                        <button type="button" className="btn btn-secondary w-full" style={{ justifyContent: 'center' }}
+                                            onClick={() => { setScanning(false); setManualCode(''); }}>
+                                            Cancel Scanning
+                                        </button>
                                     </div>
                                 </div>
                             )}
