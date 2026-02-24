@@ -223,7 +223,17 @@ const getStoredData = (): AppData => {
   initFirebaseSync();
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Firebase Realtime DB strips empty arrays, so we must replenish them if missing
+      return {
+        users: parsed.users || [],
+        classes: parsed.classes || [],
+        subjects: parsed.subjects || [],
+        sessions: parsed.sessions || [],
+        attendance: parsed.attendance || [],
+      };
+    }
   } catch (e) {
     console.error('Error reading from localStorage:', e);
   }
