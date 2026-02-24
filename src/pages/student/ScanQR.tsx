@@ -25,10 +25,14 @@ const ScanQR: React.FC = () => {
         if (!scanning) return;
 
         // Initialize scanner on the 'qr-reader' div
-        // fps: frames per second, qrbox: scanning box dimensions
+        // Force the environment (back) camera by default for mobile
         const scanner = new Html5QrcodeScanner(
             "qr-reader",
-            { fps: 10, qrbox: { width: 250, height: 250 } },
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                videoConstraints: { facingMode: "environment" }
+            },
             /* verbose= */ false
         );
 
@@ -63,15 +67,28 @@ const ScanQR: React.FC = () => {
                 return;
             }
 
-            // Validate that this session actually exists and is still active
+            // Fetch local sessions
             const sessions = getSessions();
-            const session = sessions.find(s => s.id === sessionId);
+            let session = sessions.find(s => s.id === sessionId);
 
+            // CRITICAL FIX FOR CROSS-DEVICE DEMO:
+            // Since there is no real backend, if a teacher generates a QR on their PC, 
+            // the student's phone won't have it in their local storage. 
+            // We will trust the valid QR data and mock the session locally to allow the scan success!
             if (!session) {
-                setResult('error');
-                setResultMessage('Session not found. The QR code may be invalid.');
-                setScanning(false);
-                return;
+                console.warn("Session not found locally. Trusting cross-device QR data for demo purposes.");
+                session = {
+                    id: sessionId,
+                    subjectId: subjectId,
+                    classId: classId,
+                    teacherId: 'demo-teacher',
+                    qrCode: qrDataString,
+                    date: new Date().toISOString().split('T')[0],
+                    startTime: '00:00',
+                    endTime: '',
+                    expiresAt: Date.now() + (5 * 60 * 1000), // Valid for 5 more mins
+                    isActive: true,
+                };
             }
 
             if (!session.isActive) {
