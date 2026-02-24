@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { QrCode, Clock, CheckCircle, Users, RefreshCw, StopCircle } from 'lucide-react';
+import { QrCode, Clock, CheckCircle, Users, RefreshCw, StopCircle, Copy } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
     getSubjectsByTeacher, getClasses, getStudentsByClass,
     addSession, updateSession, addAttendanceRecord,
+    getAttendanceBySession,
     generateId, Subject, ClassSection, Session, User
 } from '../../store/data';
 
@@ -27,7 +28,7 @@ const GenerateQR: React.FC = () => {
         setClasses(getClasses());
     }, [user]);
 
-    // Timer countdown
+    // Timer countdown + poll for real attendance records
     useEffect(() => {
         if (!activeSession) return;
 
@@ -38,40 +39,39 @@ const GenerateQR: React.FC = () => {
 
             if (remaining === 0) {
                 endSession();
+                return;
             }
 
-            // Simulate students scanning (for demo purposes)
-            if (remaining > 0 && remaining % 8 === 0 && allStudents.length > 0) {
-                simulateStudentScan();
-            }
-        }, 1000);
+            // Poll for real attendance records from students who scanned
+            const records = getAttendanceBySession(activeSession.id);
+            const presentStudentIds = records
+                .filter(r => r.status === 'present')
+                .map(r => r.studentId);
+
+            setAttendedStudents(prev => {
+                const newIds = presentStudentIds.filter(id => !prev.includes(id));
+                if (newIds.length > 0) {
+                    newIds.forEach(id => {
+                        const student = allStudents.find(s => s.id === id);
+                        if (student) {
+                            showToast(`${student.name} marked present!`, 'success');
+                        }
+                    });
+                    return [...prev, ...newIds];
+                }
+                return prev;
+            });
+        }, 3000); // Poll every 3 seconds
 
         return () => clearInterval(interval);
     }, [activeSession, allStudents]);
 
-    const simulateStudentScan = useCallback(() => {
-        if (!activeSession) return;
-        const notAttended = allStudents.filter(s => !attendedStudents.includes(s.id));
-        if (notAttended.length === 0) return;
-
-        const student = notAttended[Math.floor(Math.random() * notAttended.length)];
-        const now = new Date();
-        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
-        addAttendanceRecord({
-            id: generateId(),
-            sessionId: activeSession.id,
-            studentId: student.id,
-            subjectId: activeSession.subjectId,
-            classId: activeSession.classId,
-            date: new Date().toISOString().split('T')[0],
-            time: timeStr,
-            status: 'present',
-        });
-
-        setAttendedStudents(prev => [...prev, student.id]);
-        showToast(`${student.name} marked present!`, 'success');
-    }, [activeSession, allStudents, attendedStudents]);
+    const copySessionId = () => {
+        if (activeSession) {
+            navigator.clipboard.writeText(activeSession.id);
+            showToast('Session ID copied! Share with students.', 'success');
+        }
+    };
 
     const generateSession = () => {
         if (!selectedSubject || !user) {
@@ -237,6 +237,26 @@ const GenerateQR: React.FC = () => {
                                     <div className="timer-dot"></div>
                                     <Clock size={16} />
                                     <span>Expires in {formatTime(timeLeft)}</span>
+                                </div>
+
+                                <div style={{
+                                    background: 'var(--bg-glass)', border: '1px solid var(--border)',
+                                    borderRadius: 'var(--radius-md)', padding: '12px 16px',
+                                    display: 'flex', alignItems: 'center', gap: 8, marginTop: 16
+                                }}>
+                                    <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Session ID:</span>
+                                    <code style={{
+                                        background: 'var(--bg-input)', padding: '4px 8px',
+                                        borderRadius: 'var(--radius-sm)', fontSize: 12,
+                                        fontFamily: 'monospace', flex: 1, overflow: 'hidden',
+                                        textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                                    }}>
+                                        {activeSession.id}
+                                    </code>
+                                    <button className="btn btn-sm btn-secondary" onClick={copySessionId}
+                                        style={{ padding: '4px 8px' }}>
+                                        <Copy size={14} />
+                                    </button>
                                 </div>
 
                                 <div className="flex gap-3 mt-6">

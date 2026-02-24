@@ -1,14 +1,16 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import {
     LayoutDashboard, Users, BookOpen, CalendarCheck, BarChart3,
     QrCode, ClipboardList, GraduationCap, ScanLine, LogOut,
-    Building2
+    Building2, Sun, Moon
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
     const { user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -72,6 +74,20 @@ const Sidebar: React.FC = () => {
             </nav>
 
             <div className="sidebar-footer">
+                {/* Theme Toggle */}
+                <div className="theme-toggle-wrapper" onClick={toggleTheme} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
+                    <div className={`theme-toggle-track ${theme}`}>
+                        <div className="theme-toggle-icons">
+                            <Sun size={14} className="theme-icon-sun" />
+                            <Moon size={14} className="theme-icon-moon" />
+                        </div>
+                        <div className="theme-toggle-thumb" />
+                    </div>
+                    <span className="theme-toggle-label">
+                        {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                    </span>
+                </div>
+
                 <div className="sidebar-user" onClick={handleLogout} title="Click to logout">
                     <div className="sidebar-user-avatar">
                         {user.name.charAt(0).toUpperCase()}

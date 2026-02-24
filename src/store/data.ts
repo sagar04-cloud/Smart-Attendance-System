@@ -187,61 +187,6 @@ const initialSubjects: Subject[] = [
   { id: 'sub-5', name: 'Artificial Intelligence', code: 'CS502', classId: 'class-2', teacherId: 'teacher-2', semester: 6 },
 ];
 
-// Generate some initial attendance records
-const generateInitialAttendance = (): AttendanceRecord[] => {
-  const records: AttendanceRecord[] = [];
-  const dates = [
-    '2026-02-10', '2026-02-11', '2026-02-12', '2026-02-13', '2026-02-14',
-    '2026-02-17', '2026-02-18', '2026-02-19', '2026-02-20', '2026-02-21',
-  ];
-
-  const class1Students = ['student-1', 'student-2', 'student-3', 'student-4'];
-  const class1Subjects = ['sub-1', 'sub-2', 'sub-4'];
-
-  dates.forEach((date) => {
-    class1Subjects.forEach((subId) => {
-      const sessionId = `session-${date}-${subId}`;
-      class1Students.forEach((stuId) => {
-        const rand = Math.random();
-        records.push({
-          id: generateId(),
-          sessionId,
-          studentId: stuId,
-          subjectId: subId,
-          classId: 'class-1',
-          date,
-          time: '09:30',
-          status: rand > 0.15 ? 'present' : rand > 0.05 ? 'late' : 'absent',
-        });
-      });
-    });
-  });
-
-  const class2Students = ['student-5', 'student-6'];
-  const class2Subjects = ['sub-3', 'sub-5'];
-
-  dates.forEach((date) => {
-    class2Subjects.forEach((subId) => {
-      const sessionId = `session-${date}-${subId}`;
-      class2Students.forEach((stuId) => {
-        const rand = Math.random();
-        records.push({
-          id: generateId(),
-          sessionId,
-          studentId: stuId,
-          subjectId: subId,
-          classId: 'class-2',
-          date,
-          time: '10:00',
-          status: rand > 0.2 ? 'present' : rand > 0.1 ? 'late' : 'absent',
-        });
-      });
-    });
-  });
-
-  return records;
-};
-
 // ===== Data Store (LocalStorage backed) =====
 const STORAGE_KEY = 'qr_attendance_data';
 
@@ -260,13 +205,13 @@ const getStoredData = (): AppData => {
   } catch (e) {
     console.error('Error reading from localStorage:', e);
   }
-  // Initialize with mock data
+  // Initialize with real structure — no fake/random attendance
   const initial: AppData = {
     users: initialUsers,
     classes: initialClasses,
     subjects: initialSubjects,
     sessions: [],
-    attendance: generateInitialAttendance(),
+    attendance: [],
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
   return initial;
