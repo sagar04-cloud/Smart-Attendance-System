@@ -1,3 +1,6 @@
+import { db } from '../lib/firebase';
+import { ref, set, onValue } from 'firebase/database';
+
 // ===== Types =====
 export type UserRole = 'admin' | 'teacher' | 'student';
 
@@ -198,7 +201,26 @@ interface AppData {
   attendance: AttendanceRecord[];
 }
 
+let isFirebaseInitialized = false;
+
+// Initialize Firebase Sync
+const initFirebaseSync = () => {
+  if (isFirebaseInitialized) return;
+
+  // Subscribe to Firebase changes
+  const dbRef = ref(db, STORAGE_KEY);
+  onValue(dbRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      // Update local storage silently whenever cloud data changes
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+  });
+  isFirebaseInitialized = true;
+};
+
 const getStoredData = (): AppData => {
+  initFirebaseSync();
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return JSON.parse(stored);
@@ -214,11 +236,15 @@ const getStoredData = (): AppData => {
     attendance: [],
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+  // Push initial payload to empty Firebase
+  set(ref(db, STORAGE_KEY), initial).catch(console.error);
   return initial;
 };
 
 const saveData = (data: AppData) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  // Also push mutations to Firebase
+  set(ref(db, STORAGE_KEY), data).catch(console.error);
 };
 
 // ===== Data Access Functions =====
