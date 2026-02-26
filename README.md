@@ -1,224 +1,137 @@
 # 📋 QR Attend — Smart Attendance Management System
 
-A modern, QR code-based attendance management system designed for educational institutions. Built with **React**, **TypeScript**, and **Vite**, it provides separate dashboards for **Admin**, **Teacher**, and **Student** roles with a premium dark-themed UI.
+![QR Attend Hero](public/hero.png)
 
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
+A professional, high-performance **QR code-based attendance management system** designed for modern educational institutions. Built with a powerhouse stack of **React 18**, **TypeScript**, **Vite**, and **Firebase**, it delivers a seamless, real-time experience across all devices.
 
 ---
 
-## 🚀 Features
+## ✨ Overview
 
-### 🔐 Authentication & Access Control
-- Role-based login system (Admin / Teacher / Student)
-- Session-based authentication with localStorage persistence
-- Protected routes — each role can only access their own pages
-- Demo credentials provided for quick testing
+QR Attend revolutionizes the traditional attendance process by replacing manual registers and paper sheets with a secure, digital-first approach. It features dedicated portals for **Administrators**, **Faculty**, and **Students**, all wrapped in a premium **Glassmorphism** design system with support for both **Dark** and **Light** modes.
 
-### 👨‍💼 Admin Module
-- **Dashboard** — Overview with stat cards (teachers, students, classes, attendance rate), recent activity feed, and system health
-- **Manage Teachers** — Full CRUD (Create, Read, Update, Delete) for teacher accounts with search and filter
-- **Manage Students** — Add/edit/delete students with class, semester, roll number, and department assignment
-- **Classes & Sections** — Create and manage class sections with department and semester mapping
-- **Subjects** — Add subjects and assign teachers to classes
-- **Attendance Records** — View all attendance records with filters for date, subject, and status
-- **Reports** — Institution-wide attendance reports with CSV export and percentage breakdown per subject
-
-### 👩‍🏫 Teacher Module
-- **Dashboard** — View assigned subjects, student count, today's attendance count, and total sessions
-- **Generate QR Code** — Select a subject, generate a unique session QR code with a 5-minute countdown timer, and track student scans in real-time
-- **Attendance List** — View attendance records per subject with date filters and overall percentage
-- **Reports** — Student-wise attendance breakdown with progress bars, status indicators, and CSV export
-
-### 👨‍🎓 Student Module
-- **Dashboard** — Animated attendance percentage circle, subject-wise progress bars, and quick stats (total/attended/missed classes)
-- **Scan QR Code** — Animated scanner interface with camera simulation and manual session code entry
-- **My Attendance** — Filterable attendance history (All / Present / Absent) with subject-wise summary and date logs
+### 🌐 Key Links
+- **Live Demo:** [Available on Vercel](https://qr-attend.vercel.app)
+- **Tech Stack:** React, TypeScript, Firebase, Lucide, Vite
 
 ---
 
-## 🛠️ Tech Stack
+## 🚀 Role-Based Features
 
-| Technology | Purpose |
-|---|---|
-| **React 18** | UI framework with functional components and hooks |
-| **TypeScript** | Type-safe development |
-| **Vite** | Fast build tool and dev server |
-| **React Router v6** | Client-side routing with protected routes |
-| **qrcode.react** | QR code generation (SVG) |
-| **Lucide React** | Beautiful icon library |
-| **LocalStorage** | Client-side data persistence |
-| **CSS3** | Custom design system with variables, animations, glassmorphism |
+### 👨‍💼 Administrator Portal (Command Center)
+*   **Intelligent Dashboard:** Zero-effort overview of institution health, including global attendance rates and active sessions.
+*   **User Management:** Centralized control over Teacher and Student accounts with automated ID generation.
+*   **Academic Structure:** Manage departments, semesters, classes, and sections with ease.
+*   **Curriculum Mapping:** Assign subjects to specific teachers and link them to class sections.
+*   **Advanced Analytics:** Generate comprehensive attendance reports with CSV export capabilities for institutional audits.
 
----
+### 👩‍🏫 Faculty Panel (Classroom Management)
+*   **Session Generation:** Create unique, time-bound QR sessions for any assigned subject with a single click.
+*   **Live Tracking:** Watch student attendance populate in real-time as they scan the QR code.
+*   **Security Controls:** Each QR session features an auto-expiry timer (5 minutes) to eliminate proxy attendance.
+*   **Performance Tracking:** Detailed student-wise attendance breakdown with progress visualizations.
 
-## 📁 Project Structure
-
-```
-src/
-├── components/
-│   └── Sidebar.tsx            # Role-aware sidebar navigation
-├── context/
-│   ├── AuthContext.tsx         # Authentication state management
-│   └── ToastContext.tsx        # Toast notification system
-├── pages/
-│   ├── LoginPage.tsx           # Login page with role selector
-│   ├── admin/
-│   │   ├── AdminDashboard.tsx  # Admin overview dashboard
-│   │   ├── ManageUsers.tsx     # Teacher & student CRUD (reusable)
-│   │   ├── ManageClasses.tsx   # Class/section management
-│   │   ├── ManageSubjects.tsx  # Subject management
-│   │   ├── AdminAttendance.tsx # All attendance records
-│   │   └── AdminReports.tsx    # Reports with CSV export
-│   ├── teacher/
-│   │   ├── TeacherDashboard.tsx # Teacher overview
-│   │   ├── GenerateQR.tsx      # QR generation with live tracking
-│   │   ├── TeacherAttendance.tsx # Subject attendance list
-│   │   └── TeacherReports.tsx  # Student-wise reports
-│   └── student/
-│       ├── StudentDashboard.tsx # Student overview with circle chart
-│       ├── ScanQR.tsx          # QR scanner interface
-│       └── StudentAttendance.tsx # Personal attendance history
-├── store/
-│   └── data.ts                 # Data models, mock data, and CRUD operations
-├── App.tsx                     # App routing and layout
-├── main.tsx                    # Entry point
-└── index.css                   # Global design system (CSS variables, animations)
-```
+### 👨‍🎓 Student Portal (Personal Attendance)
+*   **Interactive Dashboard:** Visual attendance tracker with animated percentage charts and status cards.
+*   **Smart Scanner:** High-speed QR scanner interface with manual entry fallback for tricky lighting conditions.
+*   **History Logs:** Full transparency into personal attendance records, filtered by subject or status (Present/Absent).
+*   **Real-time Feedback:** Instant confirmation and "Toast" notifications upon successful attendance marking.
 
 ---
 
-## ⚡ Getting Started
+## 🛠️ The Powerhouse Tech Stack
+
+| Technology | Role |
+| :--- | :--- |
+| **React 18** | High-performance UI library with modern hook-based architecture. |
+| **TypeScript** | Strict type-safety across the entire application for rock-solid reliability. |
+| **Firebase** | Real-time synchronization and cloud persistence for instant data updates. |
+| **Lucide React** | A consistent, high-quality iconography system for intuitive navigation. |
+| **Vite** | The next-generation build tool for ultra-fast development and optimized bundles. |
+| **CSS3 (Modern)** | Fully custom design system featuring CSS variables, animations, and glassmorphism. |
+
+---
+
+## 🔒 Security & Sync
+
+*   **Firebase Realtime DB:** Every attendance scan and session update is synchronized across all devices in milliseconds.
+*   **Automatic Expiry:** QR codes become invalid after 5 minutes, preventing "after-class" scans or photo-sharing attendance.
+*   **Duplicate Prevention:** Sophisticated data validation prevents students from marking attendance multiple times for the same session.
+*   **Persistence Layer:** Combines LocalStorage caching with Cloud persistence for a "Work Anywhere" experience.
+
+---
+
+## ⚙️ Installation & Setup
 
 ### Prerequisites
-- **Node.js** (v16 or above)
-- **npm** (v8 or above)
+- **Node.js** (v18.0.0 or higher)
+- **npm** (v9.0.0 or higher)
 
-### Installation
-
+### Local Development
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd sanjana
+# 1. Clone the repository
+git clone https://github.com/your-username/qr-attend.git
 
-# Install dependencies
+# 2. Enter the project directory
+cd qr-attend
+
+# 3. Install dependencies
 npm install
 
-# Start the development server
+# 4. Create a .env file for Firebase (Optional for local mode)
+# See Firebase documentation to get these keys
+VITE_FIREBASE_API_KEY=your_key
+VITE_FIREBASE_AUTH_DOMAIN=your_domain
+VITE_FIREBASE_DATABASE_URL=your_db_url
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+
+# 5. Launch the development server
 npm run dev
 ```
 
-The app will be available at **http://localhost:5173/**
-
-### Build for Production
-
-```bash
-npm run build
-```
+The application will launch at `http://localhost:5173`.
 
 ---
 
-## 🔑 Demo Credentials
+## 🔑 Demo Access
+
+Quick-test the platform using these pre-configured credentials:
 
 | Role | Email | Password |
-|---|---|---|
+| :--- | :--- | :--- |
 | **Admin** | `admin@university.edu` | `admin123` |
 | **Teacher** | `anita@university.edu` | `teacher123` |
-| **Teacher** | `vikram@university.edu` | `teacher123` |
-| **Student** | `priya@student.edu` | `student123` |
-| **Student** | `rahul@student.edu` | `student123` |
 | **Student** | `sanjana@student.edu` | `student123` |
 
-> 💡 **Tip:** On the login page, click **"Fill Demo Credentials"** to auto-fill the form for the selected role.
+> 💡 **Pro-Tip:** Use the **"Fill Demo Credentials"** button on the login page for instant access!
 
 ---
 
-## 🎨 Design System
+## 📁 Project Architecture
 
-The app uses a custom **premium dark theme** with:
-
-- **Color Palette** — Indigo/violet primary accents with green, yellow, red, and blue semantic colors
-- **Glassmorphism** — Frosted glass cards with `backdrop-filter: blur()` effects
-- **Animations** — Fade-in, slide-in, scale, float, pulse, shimmer, and scan-line animations
-- **Typography** — [Inter](https://fonts.google.com/specimen/Inter) font with weights 300–900
-- **Responsive** — Fully responsive with mobile-friendly sidebar collapse
-- **Custom Scrollbar** — Themed scrollbar matching the accent colors
-
----
-
-## 📊 How the QR Attendance Flow Works
-
+```text
+src/
+├── components/     # Reusable UI components (Sidebar, Stats, etc.)
+├── context/        # Global state (Auth, Theme, Notifications)
+├── lib/            # External service integrations (Firebase)
+├── pages/          # Full-page views organized by role
+│   ├── admin/      # Management dashboards
+│   ├── teacher/    # Session generation tools
+│   └── student/    # Scanning and tracking tools
+├── store/          # Data models and CRUD logic
+└── styles/         # Global design system & theme tokens
 ```
-┌──────────────┐     ┌─────────────────┐     ┌──────────────────┐
-│   TEACHER    │     │   QR SESSION    │     │    STUDENT       │
-│              │     │                 │     │                  │
-│ 1. Select    │────▶│ 2. Unique QR    │     │ 4. Scan QR       │
-│    Subject   │     │    Generated    │────▶│    with phone    │
-│              │     │    (5 min TTL)  │     │                  │
-│ 3. Display   │     │                 │     │ 5. Attendance    │
-│    QR Code   │     │ 6. Session ends │     │    marked ✓      │
-│    to class  │     │    Auto-absent  │     │                  │
-└──────────────┘     └─────────────────┘     └──────────────────┘
-```
-
-1. **Teacher** selects a subject and clicks "Generate QR Code"
-2. A **unique, time-limited QR code** is created (valid for 5 minutes)
-3. Teacher **displays the QR code** to the class (via projector/screen)
-4. **Students scan** the QR code using their phones
-5. Attendance is **marked as present** in real-time
-6. When the session ends, remaining students are **auto-marked absent**
-
----
-
-## 🔒 Security Features
-
-- **Session-based QR codes** — Each QR is unique per session and expires after 5 minutes
-- **Role-based access control** — Routes are protected; students can't access admin/teacher pages
-- **Duplicate prevention** — A student can only mark attendance once per session
-- **Time-limited codes** — QR codes become invalid after expiry to prevent proxy attendance
-
----
-
-## 🎯 Key Benefits
-
-| Benefit | Description |
-|---|---|
-| 📱 **Paperless** | No more paper-based attendance sheets |
-| ⚡ **Fast** | Attendance marking takes seconds, not minutes |
-| 🎯 **Accurate** | Eliminates manual errors and proxy attendance |
-| 📊 **Transparent** | Students can track their own attendance in real-time |
-| 📈 **Reports** | Instant reports with CSV export for analysis |
-| 🔐 **Secure** | Time-limited, session-specific QR codes |
-
----
-
-## 🗂️ Data Storage
-
-Currently uses **localStorage** for data persistence (ideal for demos and prototyping). The data store (`src/store/data.ts`) is designed with clean interfaces and can be easily swapped for a backend API (e.g., Firebase, Supabase, or a REST/GraphQL API).
-
-### Mock Data Included
-- 1 Admin, 2 Teachers, 6 Students
-- 3 Classes (CS-4A, CS-6A, CS-2A)
-- 5 Subjects (DSA, DBMS, ML, CN, AI)
-- ~160 attendance records across 10 days
-
-> To reset all data to defaults, run this in the browser console:
-> ```js
-> localStorage.removeItem('qr_attendance_data');
-> localStorage.removeItem('qr_attendance_auth');
-> location.reload();
-> ```
 
 ---
 
 ## 📜 License
 
-This project is open source and available under the [MIT License](LICENSE).
+Distributed under the **MIT License**. See `LICENSE` for more information.
 
 ---
 
-## 👩‍💻 Author
+Built with ❤️ by **Sanjana K S**
 
-Built with ❤️ for educational institutions.
