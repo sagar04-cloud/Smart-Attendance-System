@@ -80,7 +80,7 @@ const GenerateQR: React.FC = () => {
         return () => clearInterval(interval);
     }, [activeSession, allStudents]);
 
-    // Anti-proxy: Rotate QR code token every 10 seconds
+    // Anti-proxy: Rotate QR code token every 5 seconds
     useEffect(() => {
         if (!activeSession) return;
 
@@ -96,15 +96,15 @@ const GenerateQR: React.FC = () => {
                     token: newToken, // Anti-proxy: rotating token
                 });
                 setCurrentQRData(qrData);
-                setTokenCountdown(10);
+                setTokenCountdown(5);
             }
         };
 
         // Rotate immediately when session starts
         rotateToken();
 
-        // Then rotate every 10 seconds
-        const rotateInterval = setInterval(rotateToken, 10000);
+        // Then rotate every 5 seconds
+        const rotateInterval = setInterval(rotateToken, 5000);
 
         // Countdown timer for visual feedback
         const countdownInterval = setInterval(() => {
@@ -170,7 +170,7 @@ const GenerateQR: React.FC = () => {
         setAttendedStudents([]);
         setFlaggedRecords([]);
         setCurrentQRData(qrData);
-        showToast('QR Code generated! It auto-rotates every 10 seconds for anti-proxy security.', 'success');
+        showToast('QR Code generated! It auto-rotates every 5 seconds for anti-proxy security.', 'success');
     };
 
     const endSession = () => {
@@ -310,7 +310,7 @@ const GenerateQR: React.FC = () => {
                                             🔒 Anti-Proxy Protection Active
                                         </div>
                                         <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                                            QR code auto-rotates every 10 seconds — screenshots are useless!
+                                            QR code auto-rotates every 5 seconds — screenshots are useless!
                                         </div>
                                     </div>
                                     <div style={{

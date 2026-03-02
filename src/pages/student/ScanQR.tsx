@@ -6,7 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import {
     addAttendanceRecord, generateId, getSessions, getSubjectById,
     isValidQRToken, getDeviceFingerprint, checkDeviceProxy,
-    addProxyLog
+    addProxyLog, checkStudentDeviceLock, registerStudentDevice
 } from '../../store/data';
 
 const ScanQR: React.FC = () => {
@@ -131,7 +131,7 @@ const ScanQR: React.FC = () => {
                     setResult('error');
                     setResultMessage(
                         '\ud83d\udd12 This QR code has expired!\n\n' +
-                        'The QR code rotates every 10 seconds for security. ' +
+                        'The QR code rotates every 5 seconds for security. ' +
                         'You must scan the LIVE QR code displayed on your teacher\'s screen. ' +
                         'Screenshots and shared images will NOT work.\n\n' +
                         '\u26a0\ufe0f This attempt has been recorded and reported to the admin.'
@@ -152,6 +152,37 @@ const ScanQR: React.FC = () => {
 
             // ===== ANTI-PROXY: Device Fingerprinting =====
             const deviceId = getDeviceFingerprint();
+
+            // ===== DEVICE LOCK: Check if student is using their registered device =====
+            const deviceLock = checkStudentDeviceLock(user.id, deviceId);
+            if (!deviceLock.allowed) {
+                // Student is trying to scan from a DIFFERENT phone
+                const subject = getSubjectById(subjectId);
+                addProxyLog({
+                    id: generateId(),
+                    timestamp: new Date().toISOString(),
+                    type: 'wrong_device',
+                    studentId: user.id,
+                    studentName: user.name,
+                    sessionId: sessionId,
+                    subjectId: subjectId,
+                    subjectName: subject?.name || 'Unknown',
+                    deviceId: deviceId,
+                    details: `${user.name} (${user.rollNo || user.email}) tried to scan from an UNREGISTERED device for ${subject?.name || 'Unknown Subject'}. Their attendance is locked to a different phone. They must contact the admin to change their registered device.`,
+                });
+
+                setResult('error');
+                setResultMessage(
+                    '🚫 Wrong Device!\n\n' +
+                    'Your attendance is locked to the phone you first used to scan. ' +
+                    'You are scanning from a different device.\n\n' +
+                    'Contact your admin to reset your registered device if you changed your phone.\n\n' +
+                    '⚠️ This attempt has been logged.'
+                );
+                setScanning(false);
+                showToast('Wrong device — contact admin to reset!', 'error');
+                return;
+            }
 
             // ===== ANTI-PROXY: Same-device detection =====
             const proxyCheck = checkDeviceProxy(sessionId, deviceId, user.id);
@@ -216,9 +247,22 @@ const ScanQR: React.FC = () => {
                 );
                 showToast('Attendance marked but FLAGGED — possible proxy detected!', 'error');
             } else {
-                setResult('success');
-                setResultMessage(`Attendance marked for ${subject?.name || 'Unknown Subject'}!`);
-                showToast('Attendance marked successfully!', 'success');
+                // Register device on first scan
+                if (deviceLock.isFirstScan) {
+                    registerStudentDevice(user.id, deviceId);
+                    setResult('success');
+                    setResultMessage(
+                        `✅ Attendance marked for ${subject?.name || 'Unknown Subject'}!\n\n` +
+                        `📱 Your phone has been registered to your account. ` +
+                        `From now on, only this phone can scan QR codes for your attendance. ` +
+                        `If you change your phone, contact the admin to reset.`
+                    );
+                    showToast('Attendance marked! Device registered to your account.', 'success');
+                } else {
+                    setResult('success');
+                    setResultMessage(`Attendance marked for ${subject?.name || 'Unknown Subject'}!`);
+                    showToast('Attendance marked successfully!', 'success');
+                }
             }
             setScanning(false);
         } catch {
@@ -304,7 +348,7 @@ const ScanQR: React.FC = () => {
                                         <ShieldCheck size={18} style={{ color: 'var(--accent-primary-light)', flexShrink: 0 }} />
                                         <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4 }}>
                                             <strong style={{ color: 'var(--accent-primary-light)' }}>Anti-Proxy Protection</strong><br />
-                                            QR codes rotate every 10 seconds. You must scan the <strong>live</strong> QR on screen — screenshots won't work.
+                                            QR codes rotate every 5 seconds. You must scan the <strong>live</strong> QR on screen — screenshots won't work.
                                         </div>
                                     </div>
 

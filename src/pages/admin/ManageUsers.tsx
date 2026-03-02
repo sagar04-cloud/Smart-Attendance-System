@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Plus, Search, Trash2, Edit3, X, Eye, EyeOff, Key, Copy, Check
+    Plus, Search, Trash2, Edit3, X, Eye, EyeOff, Key, Copy, Check, Smartphone
 } from 'lucide-react';
 import {
     User, getUsers, addUser, deleteUser, updateUser, getClasses,
-    generateId, ClassSection
+    generateId, ClassSection, resetStudentDevice
 } from '../../store/data';
 import { useToast } from '../../context/ToastContext';
 
@@ -181,6 +181,7 @@ const ManageUsers: React.FC<ManagePageProps> = ({ role }) => {
                             {role === 'student' && <th>Class</th>}
                             {role === 'student' && <th>Sem</th>}
                             <th>Phone</th>
+                            {role === 'student' && <th>Device</th>}
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -253,14 +254,41 @@ const ManageUsers: React.FC<ManagePageProps> = ({ role }) => {
                                         {role === 'student' && <td style={{ fontSize: 12 }}>{cls?.name || '—'}</td>}
                                         {role === 'student' && <td style={{ fontSize: 12 }}>{user.semester}</td>}
                                         <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{user.phone || '—'}</td>
+                                        {role === 'student' && (
+                                            <td>
+                                                {user.registeredDeviceId ? (
+                                                    <span className="badge badge-success" style={{ fontSize: 10 }} title={user.registeredDeviceId}>
+                                                        📱 Linked
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Not yet</span>
+                                                )}
+                                            </td>
+                                        )}
                                         <td>
-                                            <div className="flex gap-2">
-                                                <button className="btn btn-ghost btn-icon" onClick={() => openEdit(user)}>
-                                                    <Edit3 size={16} />
+                                            <div className="flex gap-1">
+                                                <button className="btn btn-ghost btn-icon" onClick={() => openEdit(user)} title="Edit">
+                                                    <Edit3 size={15} />
                                                 </button>
+                                                {role === 'student' && user.registeredDeviceId && (
+                                                    <button
+                                                        className="btn btn-ghost btn-icon"
+                                                        onClick={() => {
+                                                            if (confirm(`Reset device for ${user.name}? They will need to re-scan from their new phone.`)) {
+                                                                resetStudentDevice(user.id);
+                                                                loadData();
+                                                                showToast(`Device reset for ${user.name}`, 'success');
+                                                            }
+                                                        }}
+                                                        title="Reset registered device"
+                                                        style={{ color: '#f59e0b' }}
+                                                    >
+                                                        <Smartphone size={15} />
+                                                    </button>
+                                                )}
                                                 <button className="btn btn-ghost btn-icon" onClick={() => handleDelete(user.id, user.name)}
-                                                    style={{ color: 'var(--red-light)' }}>
-                                                    <Trash2 size={16} />
+                                                    title="Delete" style={{ color: 'var(--red-light)' }}>
+                                                    <Trash2 size={15} />
                                                 </button>
                                             </div>
                                         </td>

@@ -15,6 +15,7 @@ export interface User {
   semester?: number;
   rollNo?: string;
   phone?: string;
+  registeredDeviceId?: string; // Device locking: once registered, only this device can scan
   createdAt: string;
 }
 
@@ -173,13 +174,13 @@ export const rotateSessionToken = (sessionId: string): string => {
   const newToken = generateQRToken();
   const session = data.sessions[index];
 
-  // Keep last 2 tokens in history for grace period (covers ~20 seconds)
+  // Keep last 1 token in history for grace period (covers ~5 seconds)
   const history = session.tokenHistory || [];
   if (session.currentToken) {
     history.push(session.currentToken);
   }
-  // Only keep the last 2 tokens
-  while (history.length > 2) {
+  // Only keep the last 1 token (shorter grace for 5s rotation)
+  while (history.length > 1) {
     history.shift();
   }
 
@@ -192,6 +193,56 @@ export const rotateSessionToken = (sessionId: string): string => {
 
   saveData(data);
   return newToken;
+};
+
+// ===== Device Locking: Register a device to a student (first scan locks it) =====
+export const registerStudentDevice = (studentId: string, deviceId: string): void => {
+  const data = getStoredData();
+  const index = data.users.findIndex(u => u.id === studentId);
+  if (index === -1) return;
+
+  // Only register if not already registered
+  if (!data.users[index].registeredDeviceId) {
+    data.users[index] = { ...data.users[index], registeredDeviceId: deviceId };
+    saveData(data);
+  }
+};
+
+// ===== Device Locking: Check if student is using their registered device =====
+export const checkStudentDeviceLock = (studentId: string, currentDeviceId: string): {
+  allowed: boolean;
+  isFirstScan: boolean;
+  registeredDeviceId?: string;
+} => {
+  const data = getStoredData();
+  const student = data.users.find(u => u.id === studentId);
+  if (!student) return { allowed: false, isFirstScan: false };
+
+  // No registered device yet — this is the first scan, allow it
+  if (!student.registeredDeviceId) {
+    return { allowed: true, isFirstScan: true };
+  }
+
+  // Check if device matches the registered one
+  if (student.registeredDeviceId === currentDeviceId) {
+    return { allowed: true, isFirstScan: false, registeredDeviceId: student.registeredDeviceId };
+  }
+
+  // Different device — blocked!
+  return {
+    allowed: false,
+    isFirstScan: false,
+    registeredDeviceId: student.registeredDeviceId,
+  };
+};
+
+// ===== Device Locking: Admin can reset a student's registered device =====
+export const resetStudentDevice = (studentId: string): void => {
+  const data = getStoredData();
+  const index = data.users.findIndex(u => u.id === studentId);
+  if (index === -1) return;
+  data.users[index] = { ...data.users[index], registeredDeviceId: undefined };
+  saveData(data);
 };
 
 // ===== Initial Mock Data =====

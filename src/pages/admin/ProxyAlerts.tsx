@@ -345,7 +345,7 @@ const ProxyAlerts: React.FC = () => {
                                                     <strong style={{ color: '#ef4444' }}>📸 Screenshot Detection:</strong><br />
                                                     <span style={{ fontWeight: 600 }}>{log.studentName}</span> scanned a QR code that had already expired.<br />
                                                     <span style={{ color: 'var(--text-muted)' }}>
-                                                        Since QR codes rotate every 10 seconds, this means the student was NOT looking at the live screen.
+                                                        Since QR codes rotate every 5 seconds, this means the student was NOT looking at the live screen.
                                                         They likely received a screenshot or photo from someone else.
                                                     </span>
                                                 </div>
