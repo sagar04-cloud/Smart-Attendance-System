@@ -169,19 +169,19 @@ const ManageUsers: React.FC<ManagePageProps> = ({ role }) => {
                 <span className="badge badge-purple">{filtered.length} {role}s</span>
             </div>
 
-            <div className="table-container" style={{ overflowX: 'auto' }}>
-                <table className="data-table" style={{ minWidth: role === 'student' ? 900 : 650 }}>
+            <div className="table-container">
+                <table className="data-table">
                     <thead>
                         <tr>
-                            <th style={{ minWidth: 140 }}>Name</th>
-                            <th style={{ minWidth: 160 }}>Email</th>
-                            <th style={{ minWidth: 120 }}>Password</th>
-                            {role === 'student' && <th style={{ minWidth: 90 }}>Roll No</th>}
-                            <th style={{ minWidth: 100 }}>Department</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Password</th>
+                            {role === 'student' && <th>Roll No</th>}
+                            <th>Dept</th>
                             {role === 'student' && <th>Class</th>}
                             {role === 'student' && <th>Sem</th>}
-                            <th style={{ minWidth: 100 }}>Phone</th>
-                            <th style={{ minWidth: 80 }}>Actions</th>
+                            <th>Phone</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>

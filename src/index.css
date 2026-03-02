@@ -1016,6 +1016,7 @@ textarea {
   border: 1px solid var(--border);
   background: var(--bg-card);
   backdrop-filter: blur(12px);
+  max-width: 100%;
 }
 
 .data-table {
@@ -1024,9 +1025,9 @@ textarea {
 }
 
 .data-table th {
-  padding: 14px 20px;
+  padding: 12px 14px;
   text-align: left;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1037,8 +1038,8 @@ textarea {
 }
 
 .data-table td {
-  padding: 14px 20px;
-  font-size: 14px;
+  padding: 12px 14px;
+  font-size: 13px;
   border-bottom: 1px solid var(--border);
   transition: background var(--transition-fast);
 }
