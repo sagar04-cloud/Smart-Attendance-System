@@ -94,17 +94,21 @@ const AdminDashboard: React.FC = () => {
                 });
             });
 
-        // Recent sessions
+        // Recent sessions (limit to 2 to avoid cluttering the feed)
+        const now = Date.now();
         sessions
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            .slice(0, 5)
+            .slice(0, 2)
             .forEach(session => {
                 const teacher = users.find(u => u.id === session.teacherId);
                 const subject = subjects.find(s => s.id === session.subjectId);
                 const timestamp = new Date(`${session.date}T${session.startTime || '00:00'}`);
+                const isReallyLive = session.isActive && session.expiresAt > now;
                 activities.push({
                     id: `ses-${session.id}`,
-                    action: session.isActive ? `🟢 Live session — ${subject?.name || 'Unknown'}` : `QR session ended — ${subject?.name || 'Unknown'}`,
+                    action: isReallyLive
+                        ? `🟢 Live session — ${subject?.name || 'Unknown'}`
+                        : `Session ended — ${subject?.name || 'Unknown'}`,
                     user: teacher?.name || 'Unknown Teacher',
                     time: formatTimeAgo(timestamp.toISOString()),
                     type: 'session',
