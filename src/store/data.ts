@@ -68,6 +68,22 @@ export interface AttendanceRecord {
   flagReason?: string;
 }
 
+export interface ProxyLog {
+  id: string;
+  timestamp: string;
+  type: 'expired_qr' | 'same_device' | 'screenshot_detected';
+  studentId: string;        // The student who attempted
+  studentName: string;      // Name for quick display
+  sessionId: string;
+  subjectId: string;
+  subjectName?: string;
+  // For same-device proxy
+  proxyForStudentId?: string;   // The other student on same device
+  proxyForStudentName?: string;
+  deviceId?: string;
+  details: string;          // Human-readable description
+}
+
 // ===== Generate ID =====
 export const generateId = (): string => {
   return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
@@ -313,6 +329,7 @@ interface AppData {
   subjects: Subject[];
   sessions: Session[];
   attendance: AttendanceRecord[];
+  proxyLogs: ProxyLog[];
 }
 
 let isFirebaseInitialized = false;
@@ -346,6 +363,7 @@ const getStoredData = (): AppData => {
         subjects: parsed.subjects || [],
         sessions: parsed.sessions || [],
         attendance: parsed.attendance || [],
+        proxyLogs: parsed.proxyLogs || [],
       };
     }
   } catch (e) {
@@ -358,6 +376,7 @@ const getStoredData = (): AppData => {
     subjects: initialSubjects,
     sessions: [],
     attendance: [],
+    proxyLogs: [],
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
   // Push initial payload to empty Firebase
@@ -379,6 +398,26 @@ export const getClasses = (): ClassSection[] => getStoredData().classes;
 export const getSubjects = (): Subject[] => getStoredData().subjects;
 export const getSessions = (): Session[] => getStoredData().sessions;
 export const getAttendance = (): AttendanceRecord[] => getStoredData().attendance;
+export const getProxyLogs = (): ProxyLog[] => getStoredData().proxyLogs;
+
+// ===== Proxy Log Functions =====
+export const addProxyLog = (log: ProxyLog): void => {
+  const data = getStoredData();
+  data.proxyLogs.push(log);
+  saveData(data);
+};
+
+export const getProxyLogsBySession = (sessionId: string): ProxyLog[] =>
+  getProxyLogs().filter(l => l.sessionId === sessionId);
+
+export const getProxyLogsByStudent = (studentId: string): ProxyLog[] =>
+  getProxyLogs().filter(l => l.studentId === studentId || l.proxyForStudentId === studentId);
+
+export const clearProxyLog = (logId: string): void => {
+  const data = getStoredData();
+  data.proxyLogs = data.proxyLogs.filter(l => l.id !== logId);
+  saveData(data);
+};
 
 export const getUserById = (id: string): User | undefined => getUsers().find(u => u.id === id);
 export const getClassById = (id: string): ClassSection | undefined => getClasses().find(c => c.id === id);

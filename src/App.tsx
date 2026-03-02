@@ -13,6 +13,7 @@ import ManageClasses from './pages/admin/ManageClasses';
 import ManageSubjects from './pages/admin/ManageSubjects';
 import AdminAttendance from './pages/admin/AdminAttendance';
 import AdminReports from './pages/admin/AdminReports';
+import ProxyAlerts from './pages/admin/ProxyAlerts';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
@@ -67,6 +68,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/admin/classes" element={<ProtectedRoute allowedRole="admin"><ManageClasses /></ProtectedRoute>} />
       <Route path="/admin/subjects" element={<ProtectedRoute allowedRole="admin"><ManageSubjects /></ProtectedRoute>} />
       <Route path="/admin/attendance" element={<ProtectedRoute allowedRole="admin"><AdminAttendance /></ProtectedRoute>} />
+      <Route path="/admin/proxy-alerts" element={<ProtectedRoute allowedRole="admin"><ProxyAlerts /></ProtectedRoute>} />
       <Route path="/admin/reports" element={<ProtectedRoute allowedRole="admin"><AdminReports /></ProtectedRoute>} />
 
       {/* Teacher Routes */}

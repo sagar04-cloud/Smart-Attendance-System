@@ -5,7 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
     addAttendanceRecord, generateId, getSessions, getSubjectById,
-    isValidQRToken, getDeviceFingerprint, checkDeviceProxy
+    isValidQRToken, getDeviceFingerprint, checkDeviceProxy,
+    addProxyLog
 } from '../../store/data';
 
 const ScanQR: React.FC = () => {
@@ -112,15 +113,31 @@ const ScanQR: React.FC = () => {
             if (token) {
                 const tokenCheck = isValidQRToken(sessionId, token);
                 if (!tokenCheck.valid) {
+                    // LOG: Screenshot/expired QR attempt
+                    const subject = getSubjectById(subjectId);
+                    addProxyLog({
+                        id: generateId(),
+                        timestamp: new Date().toISOString(),
+                        type: 'screenshot_detected',
+                        studentId: user.id,
+                        studentName: user.name,
+                        sessionId: sessionId,
+                        subjectId: subjectId,
+                        subjectName: subject?.name || 'Unknown',
+                        deviceId: getDeviceFingerprint(),
+                        details: `${user.name} (${user.rollNo || user.email}) tried to scan an expired/screenshot QR code for ${subject?.name || 'Unknown Subject'}. The QR token was no longer valid, indicating the student likely used a screenshot or a shared image instead of scanning the live QR code.`,
+                    });
+
                     setResult('error');
                     setResultMessage(
-                        '🔒 This QR code has expired!\n\n' +
+                        '\ud83d\udd12 This QR code has expired!\n\n' +
                         'The QR code rotates every 10 seconds for security. ' +
                         'You must scan the LIVE QR code displayed on your teacher\'s screen. ' +
-                        'Screenshots and shared images will NOT work.'
+                        'Screenshots and shared images will NOT work.\n\n' +
+                        '\u26a0\ufe0f This attempt has been recorded and reported to the admin.'
                     );
                     setScanning(false);
-                    showToast('QR expired — scan the live QR on screen!', 'error');
+                    showToast('QR expired \u2014 this attempt has been logged!', 'error');
                     return;
                 }
             }
@@ -143,6 +160,23 @@ const ScanQR: React.FC = () => {
             if (proxyCheck.isProxy) {
                 flagged = true;
                 flagReason = `Same device already used by ${proxyCheck.existingStudentName}. Possible proxy attendance.`;
+
+                // LOG: Same-device proxy attempt
+                const subject = getSubjectById(subjectId);
+                addProxyLog({
+                    id: generateId(),
+                    timestamp: new Date().toISOString(),
+                    type: 'same_device',
+                    studentId: user.id,
+                    studentName: user.name,
+                    sessionId: sessionId,
+                    subjectId: subjectId,
+                    subjectName: subject?.name || 'Unknown',
+                    proxyForStudentId: proxyCheck.existingStudentName ? undefined : undefined,
+                    proxyForStudentName: proxyCheck.existingStudentName,
+                    deviceId: deviceId,
+                    details: `${user.name} (${user.rollNo || user.email}) used the SAME DEVICE that was already used by ${proxyCheck.existingStudentName} to mark attendance for ${subject?.name || 'Unknown Subject'}. This indicates ${proxyCheck.existingStudentName} may have given their phone to ${user.name} for proxy attendance, or vice versa.`,
+                });
             }
 
             const subject = getSubjectById(subjectId);

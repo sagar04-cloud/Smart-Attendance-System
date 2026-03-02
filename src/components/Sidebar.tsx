@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import {
     LayoutDashboard, Users, BookOpen, CalendarCheck, BarChart3,
     QrCode, ClipboardList, GraduationCap, ScanLine, LogOut,
-    Building2, Sun, Moon, Menu, X
+    Building2, Sun, Moon, Menu, X, ShieldAlert
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
@@ -44,6 +44,7 @@ const Sidebar: React.FC = () => {
         { path: '/admin/classes', icon: <Building2 />, label: 'Classes & Sections' },
         { path: '/admin/subjects', icon: <BookOpen />, label: 'Subjects' },
         { path: '/admin/attendance', icon: <CalendarCheck />, label: 'Attendance Records' },
+        { path: '/admin/proxy-alerts', icon: <ShieldAlert />, label: 'Proxy Alerts' },
         { path: '/admin/reports', icon: <BarChart3 />, label: 'Reports' },
     ];
 
