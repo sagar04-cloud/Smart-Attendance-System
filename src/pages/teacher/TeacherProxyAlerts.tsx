@@ -3,20 +3,18 @@ import { ShieldAlert, Camera, Smartphone, RefreshCw, AlertTriangle, Users, Eye }
 import { useAuth } from '../../context/AuthContext';
 import {
     getProxyLogs, getSubjectsByTeacher,
-    ProxyLog, Subject
+    ProxyLog
 } from '../../store/data';
 
 const TeacherProxyAlerts: React.FC = () => {
     const { user } = useAuth();
     const [logs, setLogs] = useState<ProxyLog[]>([]);
-    const [teacherSubjects, setTeacherSubjects] = useState<Subject[]>([]);
     const [filterType, setFilterType] = useState<string>('');
     const [expandedLog, setExpandedLog] = useState<string | null>(null);
 
     const loadData = () => {
         if (!user) return;
         const subs = getSubjectsByTeacher(user.id);
-        setTeacherSubjects(subs);
         const subjectIds = subs.map(s => s.id);
         // Only show logs for THIS teacher's subjects
         const allLogs = getProxyLogs()

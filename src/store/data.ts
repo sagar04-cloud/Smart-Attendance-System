@@ -72,7 +72,7 @@ export interface AttendanceRecord {
 export interface ProxyLog {
   id: string;
   timestamp: string;
-  type: 'expired_qr' | 'same_device' | 'screenshot_detected';
+  type: 'expired_qr' | 'same_device' | 'screenshot_detected' | 'wrong_device';
   studentId: string;        // The student who attempted
   studentName: string;      // Name for quick display
   sessionId: string;
