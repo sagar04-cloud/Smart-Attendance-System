@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Plus, Search, Trash2, Edit3, Mail, Phone, X, Eye, EyeOff, Key, Copy, Check
+    Plus, Search, Trash2, Edit3, X, Eye, EyeOff, Key, Copy, Check
 } from 'lucide-react';
 import {
     User, getUsers, addUser, deleteUser, updateUser, getClasses,
@@ -169,19 +169,19 @@ const ManageUsers: React.FC<ManagePageProps> = ({ role }) => {
                 <span className="badge badge-purple">{filtered.length} {role}s</span>
             </div>
 
-            <div className="table-container">
-                <table className="data-table">
+            <div className="table-container" style={{ overflowX: 'auto' }}>
+                <table className="data-table" style={{ minWidth: role === 'student' ? 900 : 650 }}>
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Password</th>
-                            {role === 'student' && <th>Roll No</th>}
-                            <th>Department</th>
+                            <th style={{ minWidth: 140 }}>Name</th>
+                            <th style={{ minWidth: 160 }}>Email</th>
+                            <th style={{ minWidth: 120 }}>Password</th>
+                            {role === 'student' && <th style={{ minWidth: 90 }}>Roll No</th>}
+                            <th style={{ minWidth: 100 }}>Department</th>
                             {role === 'student' && <th>Class</th>}
-                            {role === 'student' && <th>Semester</th>}
-                            <th>Phone</th>
-                            <th>Actions</th>
+                            {role === 'student' && <th>Sem</th>}
+                            <th style={{ minWidth: 100 }}>Phone</th>
+                            <th style={{ minWidth: 80 }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -201,68 +201,58 @@ const ManageUsers: React.FC<ManagePageProps> = ({ role }) => {
                                 return (
                                     <tr key={user.id}>
                                         <td>
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2" style={{ whiteSpace: 'nowrap' }}>
                                                 <div
                                                     className="attendance-avatar"
-                                                    style={{ background: avatarColors[i % avatarColors.length] }}
+                                                    style={{ background: avatarColors[i % avatarColors.length], width: 30, height: 30, fontSize: 12, flexShrink: 0 }}
                                                 >
                                                     {user.name.charAt(0)}
                                                 </div>
-                                                <span style={{ fontWeight: 600 }}>{user.name}</span>
+                                                <span style={{ fontWeight: 600, fontSize: 13 }}>{user.name}</span>
                                             </div>
                                         </td>
+                                        <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{user.email}</td>
                                         <td>
-                                            <div className="flex items-center gap-2 text-muted">
-                                                <Mail size={14} /> {user.email}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1">
                                                 <code style={{
                                                     background: 'var(--bg-glass)',
-                                                    padding: '3px 8px',
+                                                    padding: '2px 6px',
                                                     borderRadius: 'var(--radius-sm)',
-                                                    fontSize: 12,
+                                                    fontSize: 11,
                                                     fontFamily: 'monospace',
-                                                    letterSpacing: revealedPasswords.has(user.id) ? '0' : '2px',
-                                                    minWidth: 80,
-                                                    display: 'inline-block'
+                                                    letterSpacing: revealedPasswords.has(user.id) ? '0' : '1px',
                                                 }}>
-                                                    {revealedPasswords.has(user.id) ? user.password : '••••••••'}
+                                                    {revealedPasswords.has(user.id) ? user.password : '••••••'}
                                                 </code>
                                                 <button
                                                     className="btn btn-ghost btn-icon"
                                                     onClick={() => toggleRevealPassword(user.id)}
-                                                    title={revealedPasswords.has(user.id) ? 'Hide password' : 'Show password'}
-                                                    style={{ padding: 4, minWidth: 'auto' }}
+                                                    title={revealedPasswords.has(user.id) ? 'Hide' : 'Show'}
+                                                    style={{ padding: 2, minWidth: 'auto' }}
                                                 >
                                                     {revealedPasswords.has(user.id)
-                                                        ? <EyeOff size={14} style={{ color: 'var(--accent-primary-light)' }} />
-                                                        : <Eye size={14} style={{ color: 'var(--text-muted)' }} />
+                                                        ? <EyeOff size={12} style={{ color: 'var(--accent-primary-light)' }} />
+                                                        : <Eye size={12} style={{ color: 'var(--text-muted)' }} />
                                                     }
                                                 </button>
                                                 <button
                                                     className="btn btn-ghost btn-icon"
                                                     onClick={() => copyPassword(user.id, user.password)}
-                                                    title="Copy password"
-                                                    style={{ padding: 4, minWidth: 'auto' }}
+                                                    title="Copy"
+                                                    style={{ padding: 2, minWidth: 'auto' }}
                                                 >
                                                     {copiedId === user.id
-                                                        ? <Check size={14} style={{ color: '#10b981' }} />
-                                                        : <Copy size={14} style={{ color: 'var(--text-muted)' }} />
+                                                        ? <Check size={12} style={{ color: '#10b981' }} />
+                                                        : <Copy size={12} style={{ color: 'var(--text-muted)' }} />
                                                     }
                                                 </button>
                                             </div>
                                         </td>
-                                        {role === 'student' && <td><span className="badge badge-purple">{user.rollNo}</span></td>}
-                                        <td>{user.department || '—'}</td>
-                                        {role === 'student' && <td>{cls?.name || '—'}</td>}
-                                        {role === 'student' && <td>Sem {user.semester}</td>}
-                                        <td>
-                                            <div className="flex items-center gap-2 text-muted">
-                                                <Phone size={14} /> {user.phone || '—'}
-                                            </div>
-                                        </td>
+                                        {role === 'student' && <td><span className="badge badge-purple" style={{ fontSize: 11 }}>{user.rollNo}</span></td>}
+                                        <td style={{ fontSize: 12 }}>{user.department || '—'}</td>
+                                        {role === 'student' && <td style={{ fontSize: 12 }}>{cls?.name || '—'}</td>}
+                                        {role === 'student' && <td style={{ fontSize: 12 }}>{user.semester}</td>}
+                                        <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{user.phone || '—'}</td>
                                         <td>
                                             <div className="flex gap-2">
                                                 <button className="btn btn-ghost btn-icon" onClick={() => openEdit(user)}>
