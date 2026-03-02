@@ -17,6 +17,32 @@ QR Attend features a **4-layer security architecture** to ensure attendance inte
 
 ---
 
+## 🔄 How It Works (Step-by-Step)
+
+### 1. 👩‍🏫 Teacher Side: Session Creation
+- **Choose Subject:** Teacher selects the subject from their assigned list.
+- **Set Duration:** Teacher defines how long the attendance window remains open.
+- **Live QR Generation:** A unique QR code is generated. This QR code **changes every 5 seconds** with a new secure token.
+- **Monitoring:** Teacher watches the live dashboard as students appear in real-time. Any proxy attempts appear with red/yellow warning badges.
+
+### 2. 👨‍🎓 Student Side: Smart Scanning
+- **Open Scanner:** Student logs in and selects the "Scan QR" feature.
+- **Camera Scan:** Student points their camera at the teacher's screen.
+- **First Scan (Registration):** If it's the student's first scan, their current phone is **permanently linked** to their account as their official device.
+- **Automatic Validation:**
+    - System checks if they are in the correct class for that subject.
+    - System verifies they are using their **registered phone**.
+    - System checks for same-device proxy flags.
+- **Instant Result:** Success result is shown, and attendance is saved instantly to the cloud.
+
+### 3. 👨‍💼 Admin Side: Oversight & Auditing
+- **Live Activity:** Admin monitors global institution activity via the "Live Activity Feed" on the dashboard.
+- **Proxy Management:** Admin reviews all auto-logged proxy alerts (screenshots, wrong devices, etc.).
+- **Data Export:** Generate detailed attendance sheets for any department, teacher, or class in CSV format.
+- **Device Support:** Admin can "Reset Device" for students who legitimately change their phones.
+
+---
+
 ## ✨ Overview
 
 QR Attend revolutionizes the traditional attendance process by replacing manual registers and paper sheets with a secure, digital-first approach. It features dedicated portals for **Administrators**, **Faculty**, and **Students**, all wrapped in a premium **Glassmorphism** design system with support for both **Dark** and **Light** modes.
@@ -81,16 +107,7 @@ cd qr-attend
 # 3. Install dependencies
 npm install
 
-# 4. Create a .env file for Firebase (Optional for local mode)
-VITE_FIREBASE_API_KEY=your_key
-VITE_FIREBASE_AUTH_DOMAIN=your_domain
-VITE_FIREBASE_DATABASE_URL=your_db_url
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-
-# 5. Launch the development server
+# 4. Launch the development server
 npm run dev
 ```
 
