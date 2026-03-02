@@ -17,35 +17,63 @@ QR Attend features a **4-layer security architecture** to ensure attendance inte
 
 ---
 
-## 🔄 How It Works (Step-by-Step)
+## ⚙️ Detailed Working Mechanism (Anti-Proxy Logic)
+
+To ensure 100% attendance integrity, the system follows a sophisticated backend validation flow:
+
+### 1. Dynamic QR Tokenization (The "5-Second Rule")
+Every session generates a cryptographically random token that is embedded into the QR code. 
+- **Rotation:** The teacher's dashboard generates a new token every **5 seconds**.
+- **Grace Period:** The system allows a tiny overlap (last 1 token) to account for network latency, but any scan older than ~7 seconds is rejected.
+- **Result:** Screenshots sent via social media reach the recipient too late to be valid.
+
+### 2. Hardware Fingerprinting & Device Binding (The "Phone Memory")
+The system uses a unique hardware-based fingerprinting algorithm to identify each physical device.
+- **Registration Phase:** On the student's **first-ever scan**, the system captures their unique `deviceId` and saves it to their profile as `registeredDeviceId`. This is the "Phone Memory".
+- **Validation Phase:** On every subsequent scan, the system compares the current phone's ID with the stored `registeredDeviceId`.
+- **Enforcement:** If a student tries to scan using a friend's phone or a second device, the system detects the mismatch and **blocks the attendance**, logging a "Wrong Device" violation.
+
+### 3. One-to-One Mapping (The "Proxy Block")
+Even if a student uses their own registered phone, the system prevents them from being a "Proxy" for others.
+- **Detection:** If Phone A marks attendance for Student 1, and then tries to mark attendance for Student 2 in the same session, the system flags it as **"Same Device Proxy Detected"**.
+- **Result:** Students cannot pass one phone around the room to mark multiple people present.
+
+### 4. Administrative Override
+In case a student legitimately changes their phone (lost phone, new purchase):
+- **Reset Process:** The Student must contact the **Admin**.
+- **Action:** The Admin can "Reset Device" in the User Management panel, which clears the "Phone Memory".
+- **Re-binding:** The student can then scan using their new phone, which becomes their new registered device.
+
+---
+
+## 🔄 How It Works (Role-Based Workflow)
 
 ### 1. 👩‍🏫 Teacher Side: Session Creation
 - **Choose Subject:** Teacher selects the subject from their assigned list.
 - **Set Duration:** Teacher defines how long the attendance window remains open.
-- **Live QR Generation:** A unique QR code is generated. This QR code **changes every 5 seconds** with a new secure token.
+- **Live QR Generation:** A unique QR code is generated. This QR code **changes every 5 seconds**.
 - **Monitoring:** Teacher watches the live dashboard as students appear in real-time. Any proxy attempts appear with red/yellow warning badges.
 
 ### 2. 👨‍🎓 Student Side: Smart Scanning
 - **Open Scanner:** Student logs in and selects the "Scan QR" feature.
 - **Camera Scan:** Student points their camera at the teacher's screen.
-- **First Scan (Registration):** If it's the student's first scan, their current phone is **permanently linked** to their account as their official device.
-- **Automatic Validation:**
-    - System checks if they are in the correct class for that subject.
-    - System verifies they are using their **registered phone**.
+- **Validation:**
+    - System verifies they are using their **registered phone** (stored in phone memory).
+    - System checks if they are in the correct class.
     - System checks for same-device proxy flags.
 - **Instant Result:** Success result is shown, and attendance is saved instantly to the cloud.
 
 ### 3. 👨‍💼 Admin Side: Oversight & Auditing
-- **Live Activity:** Admin monitors global institution activity via the "Live Activity Feed" on the dashboard.
-- **Proxy Management:** Admin reviews all auto-logged proxy alerts (screenshots, wrong devices, etc.).
-- **Data Export:** Generate detailed attendance sheets for any department, teacher, or class in CSV format.
-- **Device Support:** Admin can "Reset Device" for students who legitimately change their phones.
+- **Live Activity:** Admin monitors global activity via the dashboard activity feed.
+- **Proxy Management:** Admin reviews all auto-logged proxy alerts.
+- **Data Export:** Generate detailed attendance sheets in CSV format.
+- **Device Support:** Admin can "Reset Device" for students as needed.
 
 ---
 
 ## ✨ Overview
 
-QR Attend revolutionizes the traditional attendance process by replacing manual registers and paper sheets with a secure, digital-first approach. It features dedicated portals for **Administrators**, **Faculty**, and **Students**, all wrapped in a premium **Glassmorphism** design system with support for both **Dark** and **Light** modes.
+QR Attend revolutionizes the traditional attendance process with a secure, digital-first approach. It features dedicated portals for **Administrators**, **Faculty**, and **Students**, wrapped in a premium **Glassmorphism** design system.
 
 ### 🌐 Key Links
 - **Live Demo:** [Available on Vercel](https://qr-attend.vercel.app)
@@ -53,71 +81,34 @@ QR Attend revolutionizes the traditional attendance process by replacing manual 
 
 ---
 
-## 🚀 Role-Based Features
-
-### 👨‍💼 Administrator Portal (Command Center)
-*   **Live Activity Feed:** See real-time attendance scans, session starts, and student registrations.
-*   **Proxy Alert Center:** Monitor all suspicious activity with a dedicated violation tracking dashboard.
-*   **Attendance Filtering:** View records by **Department** or **Teacher** with one-click filtering.
-*   **Device Management:** Reset a student's linked device if they legitimately change their phone.
-*   **Academic Structure:** Manage departments, semesters, classes, and sections with ease.
-*   **Advanced Analytics:** Generate comprehensive attendance reports with CSV export capabilities.
-
-### 👩‍🏫 Faculty Panel (Classroom Management)
-*   **Session Generation:** Create unique, time-bound QR sessions for any assigned subject with a single click.
-*   **Proxy Monitoring:** Receive instant alerts and "Proxy" badges on the live attendance list during sessions.
-*   **Teacher Proxy Alerts:** Dedicated view for violations occurring within the teacher's own subjects.
-*   **Performance Tracking:** Detailed student-wise attendance breakdown with progress visualizations.
-
-### 👨‍🎓 Student Portal (Personal Attendance)
-*   **Interactive Dashboard:** Visual attendance tracker with animated percentage charts and status cards.
-*   **Smart Scanner:** High-speed QR scanner interface with device registration feedback.
-*   **History Logs:** Full transparency into personal attendance records, filtered by subject or status.
-*   **Instant Notifications:** Real-time confirmation for successful scans.
-
----
-
 ## 🛠️ The Powerhouse Tech Stack
 
 | Technology | Role |
 | :--- | :--- |
-| **React 18** | High-performance UI library with modern hook-based architecture. |
-| **TypeScript** | Strict type-safety across the entire application for rock-solid reliability. |
-| **Firebase** | Real-time synchronization and cloud persistence for instant data updates. |
-| **Lucide React** | A consistent, high-quality iconography system for intuitive navigation. |
-| **Vite** | The next-generation build tool for ultra-fast development and optimized bundles. |
-| **CSS3 (Modern)** | Fully custom design system featuring CSS variables, animations, and glassmorphism. |
+| **React 18** | High-performance UI library. |
+| **TypeScript** | Strict type-safety for reliability. |
+| **Firebase** | Real-time synchronization and cloud persistence. |
+| **Lucide React** | Consistent, high-quality iconography. |
+| **Vite** | Ultra-fast development and optimized builds. |
+| **CSS3 (Modern)** | Custom design system with glassmorphism. |
 
 ---
 
 ## ⚙️ Installation & Setup
 
-### Prerequisites
-- **Node.js** (v18.0.0 or higher)
-- **npm** (v9.0.0 or higher)
-
-### Local Development
 ```bash
-# 1. Clone the repository
+# 1. Clone & Install
 git clone https://github.com/your-username/qr-attend.git
-
-# 2. Enter the project directory
 cd qr-attend
-
-# 3. Install dependencies
 npm install
 
-# 4. Launch the development server
+# 2. Launch
 npm run dev
 ```
-
-The application will launch at `http://localhost:5173`.
 
 ---
 
 ## 🔑 Demo Access
-
-Quick-test the platform using these pre-configured credentials:
 
 | Role | Email | Password |
 | :--- | :--- | :--- |
