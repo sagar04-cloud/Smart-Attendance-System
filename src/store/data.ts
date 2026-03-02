@@ -46,6 +46,10 @@ export interface Session {
   endTime: string;
   expiresAt: number;
   isActive: boolean;
+  // Anti-proxy: rotating tokens
+  currentToken?: string;
+  tokenGeneratedAt?: number;
+  tokenHistory?: string[]; // last few tokens for grace period
 }
 
 export interface AttendanceRecord {
@@ -57,11 +61,121 @@ export interface AttendanceRecord {
   date: string;
   time: string;
   status: 'present' | 'absent' | 'late';
+  // Anti-proxy fields
+  deviceId?: string;
+  scannedToken?: string;
+  flagged?: boolean;
+  flagReason?: string;
 }
 
 // ===== Generate ID =====
 export const generateId = (): string => {
   return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+};
+
+// ===== Anti-Proxy: Generate short-lived token =====
+export const generateQRToken = (): string => {
+  return Math.random().toString(36).substring(2, 10) + '-' + Date.now().toString(36);
+};
+
+// ===== Anti-Proxy: Device Fingerprinting =====
+export const getDeviceFingerprint = (): string => {
+  // Check if we already have a stored fingerprint for this browser
+  const storedFp = localStorage.getItem('device_fingerprint');
+  if (storedFp) return storedFp;
+
+  // Generate a new fingerprint based on browser properties
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  let canvasHash = 'no-canvas';
+  if (ctx) {
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillText('fingerprint', 2, 2);
+    canvasHash = canvas.toDataURL().slice(-50);
+  }
+
+  const components = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width + 'x' + screen.height,
+    screen.colorDepth,
+    new Date().getTimezoneOffset(),
+    navigator.hardwareConcurrency || 'unknown',
+    canvasHash,
+    // Add a random component to make it truly unique per browser installation
+    Math.random().toString(36).substring(2, 15),
+  ];
+
+  // Simple hash function
+  const rawStr = components.join('|');
+  let hash = 0;
+  for (let i = 0; i < rawStr.length; i++) {
+    const char = rawStr.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  const fingerprint = 'dev-' + Math.abs(hash).toString(36) + '-' + Date.now().toString(36);
+  localStorage.setItem('device_fingerprint', fingerprint);
+  return fingerprint;
+};
+
+// ===== Anti-Proxy: Validate a scanned QR token against a session =====
+export const isValidQRToken = (sessionId: string, token: string): { valid: boolean; reason?: string } => {
+  const data = getStoredData();
+  const session = data.sessions.find(s => s.id === sessionId);
+  if (!session) return { valid: false, reason: 'Session not found' };
+  if (!session.isActive) return { valid: false, reason: 'Session has ended' };
+  if (session.expiresAt <= Date.now()) return { valid: false, reason: 'Session expired' };
+
+  // Check if the token matches current or any recent token (grace period)
+  if (session.currentToken === token) return { valid: true };
+  if (session.tokenHistory && session.tokenHistory.includes(token)) return { valid: true };
+
+  return { valid: false, reason: 'QR code has expired or is invalid. Please scan the latest QR code displayed on screen.' };
+};
+
+// ===== Anti-Proxy: Check if a device already marked attendance for another student =====
+export const checkDeviceProxy = (sessionId: string, deviceId: string, currentStudentId: string): { isProxy: boolean; existingStudentName?: string } => {
+  const data = getStoredData();
+  const existingRecord = data.attendance.find(
+    a => a.sessionId === sessionId && a.deviceId === deviceId && a.studentId !== currentStudentId
+  );
+  if (existingRecord) {
+    const existingStudent = data.users.find(u => u.id === existingRecord.studentId);
+    return { isProxy: true, existingStudentName: existingStudent?.name || 'Another student' };
+  }
+  return { isProxy: false };
+};
+
+// ===== Anti-Proxy: Update session with new rotating token =====
+export const rotateSessionToken = (sessionId: string): string => {
+  const data = getStoredData();
+  const index = data.sessions.findIndex(s => s.id === sessionId);
+  if (index === -1) return '';
+
+  const newToken = generateQRToken();
+  const session = data.sessions[index];
+
+  // Keep last 2 tokens in history for grace period (covers ~20 seconds)
+  const history = session.tokenHistory || [];
+  if (session.currentToken) {
+    history.push(session.currentToken);
+  }
+  // Only keep the last 2 tokens
+  while (history.length > 2) {
+    history.shift();
+  }
+
+  data.sessions[index] = {
+    ...session,
+    currentToken: newToken,
+    tokenGeneratedAt: Date.now(),
+    tokenHistory: history,
+  };
+
+  saveData(data);
+  return newToken;
 };
 
 // ===== Initial Mock Data =====
@@ -360,16 +474,39 @@ export const updateSession = (id: string, updates: Partial<Session>): void => {
   }
 };
 
-export const addAttendanceRecord = (record: AttendanceRecord): void => {
+export const addAttendanceRecord = (record: AttendanceRecord): { success: boolean; reason?: string } => {
   const data = getStoredData();
   // Prevent duplicate attendance for same session and student
   const exists = data.attendance.find(
     a => a.sessionId === record.sessionId && a.studentId === record.studentId
   );
-  if (!exists) {
-    data.attendance.push(record);
-    saveData(data);
+  if (exists) {
+    return { success: false, reason: 'Attendance already marked for this session.' };
   }
+
+  // Anti-proxy: Check if same device was used by a different student
+  if (record.deviceId) {
+    const deviceUsedBy = data.attendance.find(
+      a => a.sessionId === record.sessionId && a.deviceId === record.deviceId && a.studentId !== record.studentId
+    );
+    if (deviceUsedBy) {
+      const otherStudent = data.users.find(u => u.id === deviceUsedBy.studentId);
+      // Flag the record but still allow it (teacher can review flagged records)
+      record.flagged = true;
+      record.flagReason = `Same device used by ${otherStudent?.name || 'another student'}. Possible proxy attendance.`;
+
+      // Also flag the original record
+      const origIndex = data.attendance.findIndex(a => a.id === deviceUsedBy.id);
+      if (origIndex !== -1) {
+        data.attendance[origIndex].flagged = true;
+        data.attendance[origIndex].flagReason = `Same device also used by ${record.studentId}. Possible proxy attendance.`;
+      }
+    }
+  }
+
+  data.attendance.push(record);
+  saveData(data);
+  return { success: true };
 };
 
 export const updateAttendanceRecord = (id: string, updates: Partial<AttendanceRecord>): void => {

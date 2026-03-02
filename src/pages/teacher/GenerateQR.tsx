@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { QrCode, Clock, CheckCircle, Users, RefreshCw, StopCircle, Copy } from 'lucide-react';
+import { QrCode, Clock, CheckCircle, Users, RefreshCw, StopCircle, Copy, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
     getSubjectsByTeacher, getClasses, getStudentsByClass,
     addSession, updateSession, addAttendanceRecord,
-    getAttendanceBySession,
+    getAttendanceBySession, rotateSessionToken, generateQRToken,
     generateId, Subject, ClassSection, Session, User
 } from '../../store/data';
 
@@ -20,6 +20,9 @@ const GenerateQR: React.FC = () => {
     const [timeLeft, setTimeLeft] = useState(0);
     const [attendedStudents, setAttendedStudents] = useState<string[]>([]);
     const [allStudents, setAllStudents] = useState<User[]>([]);
+    const [currentQRData, setCurrentQRData] = useState('');
+    const [tokenCountdown, setTokenCountdown] = useState(10);
+    const [flaggedRecords, setFlaggedRecords] = useState<string[]>([]);
 
     useEffect(() => {
         if (!user) return;
@@ -48,13 +51,24 @@ const GenerateQR: React.FC = () => {
                 .filter(r => r.status === 'present')
                 .map(r => r.studentId);
 
+            // Check for flagged records (proxy attempts)
+            const flagged = records
+                .filter(r => r.flagged)
+                .map(r => r.studentId);
+            setFlaggedRecords(flagged);
+
             setAttendedStudents(prev => {
                 const newIds = presentStudentIds.filter(id => !prev.includes(id));
                 if (newIds.length > 0) {
                     newIds.forEach(id => {
                         const student = allStudents.find(s => s.id === id);
+                        const record = records.find(r => r.studentId === id);
                         if (student) {
-                            showToast(`${student.name} marked present!`, 'success');
+                            if (record?.flagged) {
+                                showToast(`⚠️ ${student.name} marked present — FLAGGED: possible proxy!`, 'error');
+                            } else {
+                                showToast(`${student.name} marked present!`, 'success');
+                            }
                         }
                     });
                     return [...prev, ...newIds];
@@ -65,6 +79,43 @@ const GenerateQR: React.FC = () => {
 
         return () => clearInterval(interval);
     }, [activeSession, allStudents]);
+
+    // Anti-proxy: Rotate QR code token every 10 seconds
+    useEffect(() => {
+        if (!activeSession) return;
+
+        const rotateToken = () => {
+            const newToken = rotateSessionToken(activeSession.id);
+            if (newToken) {
+                const qrData = JSON.stringify({
+                    sessionId: activeSession.id,
+                    subjectId: activeSession.subjectId,
+                    classId: activeSession.classId,
+                    teacherId: activeSession.teacherId,
+                    timestamp: Date.now(),
+                    token: newToken, // Anti-proxy: rotating token
+                });
+                setCurrentQRData(qrData);
+                setTokenCountdown(10);
+            }
+        };
+
+        // Rotate immediately when session starts
+        rotateToken();
+
+        // Then rotate every 10 seconds
+        const rotateInterval = setInterval(rotateToken, 10000);
+
+        // Countdown timer for visual feedback
+        const countdownInterval = setInterval(() => {
+            setTokenCountdown(prev => Math.max(0, prev - 1));
+        }, 1000);
+
+        return () => {
+            clearInterval(rotateInterval);
+            clearInterval(countdownInterval);
+        };
+    }, [activeSession]);
 
     const copySessionId = () => {
         if (activeSession) {
@@ -87,12 +138,14 @@ const GenerateQR: React.FC = () => {
 
         const sessionId = generateId();
         const now = new Date();
+        const initialToken = generateQRToken();
         const qrData = JSON.stringify({
             sessionId,
             subjectId: subject.id,
             classId: subject.classId,
             teacherId: user.id,
             timestamp: now.getTime(),
+            token: initialToken, // Anti-proxy: rotating token
         });
 
         const session: Session = {
@@ -106,13 +159,18 @@ const GenerateQR: React.FC = () => {
             endTime: '',
             expiresAt: now.getTime() + 5 * 60 * 1000, // 5 minutes
             isActive: true,
+            currentToken: initialToken,
+            tokenGeneratedAt: now.getTime(),
+            tokenHistory: [],
         };
 
         addSession(session);
         setActiveSession(session);
         setTimeLeft(300);
         setAttendedStudents([]);
-        showToast('QR Code generated! Session is active.', 'success');
+        setFlaggedRecords([]);
+        setCurrentQRData(qrData);
+        showToast('QR Code generated! It auto-rotates every 10 seconds for anti-proxy security.', 'success');
     };
 
     const endSession = () => {
@@ -219,7 +277,7 @@ const GenerateQR: React.FC = () => {
                             <div className="qr-display">
                                 <div className="qr-code-wrapper">
                                     <QRCodeSVG
-                                        value={activeSession.qrCode}
+                                        value={currentQRData || activeSession.qrCode}
                                         size={220}
                                         level="H"
                                         includeMargin={false}
@@ -237,6 +295,39 @@ const GenerateQR: React.FC = () => {
                                     <div className="timer-dot"></div>
                                     <Clock size={16} />
                                     <span>Expires in {formatTime(timeLeft)}</span>
+                                </div>
+
+                                {/* Anti-proxy: Token rotation indicator */}
+                                <div style={{
+                                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(52, 211, 153, 0.1))',
+                                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                                    borderRadius: 'var(--radius-md)', padding: '12px 16px',
+                                    marginTop: 12, display: 'flex', alignItems: 'center', gap: 10
+                                }}>
+                                    <ShieldCheck size={18} style={{ color: '#10b981' }} />
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: 12, fontWeight: 600, color: '#10b981', marginBottom: 2 }}>
+                                            🔒 Anti-Proxy Protection Active
+                                        </div>
+                                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                                            QR code auto-rotates every 10 seconds — screenshots are useless!
+                                        </div>
+                                    </div>
+                                    <div style={{
+                                        width: 36, height: 36, borderRadius: '50%',
+                                        background: 'rgba(16, 185, 129, 0.15)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: 14, fontWeight: 700, color: '#10b981',
+                                        position: 'relative'
+                                    }}>
+                                        <svg width="36" height="36" style={{ position: 'absolute', transform: 'rotate(-90deg)' }}>
+                                            <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(16,185,129,0.2)" strokeWidth="2" />
+                                            <circle cx="18" cy="18" r="16" fill="none" stroke="#10b981" strokeWidth="2"
+                                                strokeDasharray={`${(tokenCountdown / 10) * 100.53} 100.53`}
+                                                strokeLinecap="round" />
+                                        </svg>
+                                        {tokenCountdown}s
+                                    </div>
                                 </div>
 
                                 <div style={{
@@ -287,21 +378,40 @@ const GenerateQR: React.FC = () => {
                         <div className="card-body" style={{ padding: 0 }}>
                             {allStudents.map((student, i) => {
                                 const isPresent = attendedStudents.includes(student.id);
+                                const isFlagged = flaggedRecords.includes(student.id);
                                 return (
                                     <div key={student.id} className="attendance-item" style={{ animationDelay: `${i * 0.05}s` }}>
                                         <div className="attendance-avatar" style={{
                                             background: isPresent
-                                                ? 'linear-gradient(135deg, #10b981, #34d399)'
+                                                ? isFlagged
+                                                    ? 'linear-gradient(135deg, #f59e0b, #fbbf24)'
+                                                    : 'linear-gradient(135deg, #10b981, #34d399)'
                                                 : 'linear-gradient(135deg, #374151, #4b5563)'
                                         }}>
-                                            {isPresent ? <CheckCircle size={16} /> : student.name.charAt(0)}
+                                            {isPresent
+                                                ? isFlagged
+                                                    ? <AlertTriangle size={16} />
+                                                    : <CheckCircle size={16} />
+                                                : student.name.charAt(0)}
                                         </div>
                                         <div className="attendance-info">
-                                            <div className="attendance-name">{student.name}</div>
+                                            <div className="attendance-name">
+                                                {student.name}
+                                                {isFlagged && (
+                                                    <span style={{
+                                                        fontSize: 10, fontWeight: 700,
+                                                        background: 'rgba(245, 158, 11, 0.2)',
+                                                        color: '#f59e0b', padding: '2px 6px',
+                                                        borderRadius: 4, marginLeft: 8
+                                                    }}>⚠ PROXY ALERT</span>
+                                                )}
+                                            </div>
                                             <div className="attendance-meta">{student.rollNo}</div>
                                         </div>
                                         {isPresent
-                                            ? <span className="badge badge-success">Present</span>
+                                            ? isFlagged
+                                                ? <span className="badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>⚠ Flagged</span>
+                                                : <span className="badge badge-success">Present</span>
                                             : <span className="badge" style={{ background: 'var(--bg-glass)', color: 'var(--text-muted)' }}>Waiting...</span>
                                         }
                                     </div>

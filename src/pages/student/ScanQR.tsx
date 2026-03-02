@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ScanLine, CheckCircle, XCircle, Camera, RefreshCw } from 'lucide-react';
+import { ScanLine, CheckCircle, XCircle, Camera, RefreshCw, ShieldCheck } from 'lucide-react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
-    addAttendanceRecord, generateId, getSessions, getSubjectById
+    addAttendanceRecord, generateId, getSessions, getSubjectById,
+    isValidQRToken, getDeviceFingerprint, checkDeviceProxy
 } from '../../store/data';
 
 const ScanQR: React.FC = () => {
@@ -58,7 +59,7 @@ const ScanQR: React.FC = () => {
 
         try {
             const qrData = JSON.parse(qrDataString);
-            const { sessionId, subjectId, classId } = qrData;
+            const { sessionId, subjectId, classId, token } = qrData;
 
             if (!sessionId || !subjectId || !classId) {
                 setResult('error');
@@ -88,6 +89,8 @@ const ScanQR: React.FC = () => {
                     endTime: '',
                     expiresAt: Date.now() + (5 * 60 * 1000), // Valid for 5 more mins
                     isActive: true,
+                    currentToken: token, // Trust the token from QR for cross-device
+                    tokenHistory: [],
                 };
             }
 
@@ -105,6 +108,23 @@ const ScanQR: React.FC = () => {
                 return;
             }
 
+            // ===== ANTI-PROXY: Token Validation =====
+            if (token) {
+                const tokenCheck = isValidQRToken(sessionId, token);
+                if (!tokenCheck.valid) {
+                    setResult('error');
+                    setResultMessage(
+                        '🔒 This QR code has expired!\n\n' +
+                        'The QR code rotates every 10 seconds for security. ' +
+                        'You must scan the LIVE QR code displayed on your teacher\'s screen. ' +
+                        'Screenshots and shared images will NOT work.'
+                    );
+                    setScanning(false);
+                    showToast('QR expired — scan the live QR on screen!', 'error');
+                    return;
+                }
+            }
+
             // Check if student's class matches the session class
             if (user.classId && user.classId !== classId) {
                 setResult('error');
@@ -113,11 +133,23 @@ const ScanQR: React.FC = () => {
                 return;
             }
 
+            // ===== ANTI-PROXY: Device Fingerprinting =====
+            const deviceId = getDeviceFingerprint();
+
+            // ===== ANTI-PROXY: Same-device detection =====
+            const proxyCheck = checkDeviceProxy(sessionId, deviceId, user.id);
+            let flagged = false;
+            let flagReason = '';
+            if (proxyCheck.isProxy) {
+                flagged = true;
+                flagReason = `Same device already used by ${proxyCheck.existingStudentName}. Possible proxy attendance.`;
+            }
+
             const subject = getSubjectById(subjectId);
             const now = new Date();
             const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
-            addAttendanceRecord({
+            const result = addAttendanceRecord({
                 id: generateId(),
                 sessionId: session.id,
                 studentId: user.id,
@@ -126,15 +158,37 @@ const ScanQR: React.FC = () => {
                 date: now.toISOString().split('T')[0],
                 time: timeStr,
                 status: 'present',
+                deviceId: deviceId,
+                scannedToken: token || '',
+                flagged: flagged,
+                flagReason: flagReason,
             });
 
-            setResult('success');
-            setResultMessage(`Attendance marked for ${subject?.name || 'Unknown Subject'}!`);
-            showToast('Attendance marked successfully!', 'success');
+            if (!result.success) {
+                setResult('error');
+                setResultMessage(result.reason || 'Could not mark attendance.');
+                setScanning(false);
+                showToast(result.reason || 'Attendance already marked', 'error');
+                return;
+            }
+
+            if (flagged) {
+                setResult('success');
+                setResultMessage(
+                    `⚠️ Attendance marked for ${subject?.name || 'Unknown Subject'}, ` +
+                    `but it has been FLAGGED for review.\n\n` +
+                    `Reason: ${flagReason}\n\n` +
+                    `Your teacher will be notified.`
+                );
+                showToast('Attendance marked but FLAGGED — possible proxy detected!', 'error');
+            } else {
+                setResult('success');
+                setResultMessage(`Attendance marked for ${subject?.name || 'Unknown Subject'}!`);
+                showToast('Attendance marked successfully!', 'success');
+            }
             setScanning(false);
         } catch {
             // Just assume it was a raw session ID string if JSON parse fails
-            // It might be someone accidentally scanning a barcode or random QR
             setResult('error');
             setResultMessage('Invalid QR code format. Please scan a valid QR Attend code.');
             setScanning(false);
@@ -204,6 +258,22 @@ const ScanQR: React.FC = () => {
                                     <p className="text-muted text-sm" style={{ marginBottom: 32, maxWidth: 320, margin: '0 auto 32px' }}>
                                         Point your camera at the QR code displayed by your teacher to mark your attendance.
                                     </p>
+
+                                    {/* Anti-proxy info banner */}
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08))',
+                                        border: '1px solid rgba(99, 102, 241, 0.2)',
+                                        borderRadius: 'var(--radius-md)', padding: '10px 14px',
+                                        marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10,
+                                        textAlign: 'left'
+                                    }}>
+                                        <ShieldCheck size={18} style={{ color: 'var(--accent-primary-light)', flexShrink: 0 }} />
+                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                                            <strong style={{ color: 'var(--accent-primary-light)' }}>Anti-Proxy Protection</strong><br />
+                                            QR codes rotate every 10 seconds. You must scan the <strong>live</strong> QR on screen — screenshots won't work.
+                                        </div>
+                                    </div>
+
                                     <button className="btn btn-primary btn-lg w-full" onClick={startScanning}
                                         style={{ justifyContent: 'center', marginBottom: 20 }}>
                                         <Camera size={20} /> Start Scanning
