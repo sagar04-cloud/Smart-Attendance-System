@@ -52,6 +52,7 @@ const Sidebar: React.FC = () => {
         { path: '/teacher', icon: <LayoutDashboard />, label: 'Dashboard' },
         { path: '/teacher/generate-qr', icon: <QrCode />, label: 'Generate QR Code' },
         { path: '/teacher/attendance', icon: <ClipboardList />, label: 'Attendance List' },
+        { path: '/teacher/proxy-alerts', icon: <ShieldAlert />, label: 'Proxy Alerts' },
         { path: '/teacher/reports', icon: <BarChart3 />, label: 'Reports' },
     ];
 

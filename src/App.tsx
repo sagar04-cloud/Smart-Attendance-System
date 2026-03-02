@@ -20,6 +20,7 @@ import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import GenerateQR from './pages/teacher/GenerateQR';
 import TeacherAttendance from './pages/teacher/TeacherAttendance';
 import TeacherReports from './pages/teacher/TeacherReports';
+import TeacherProxyAlerts from './pages/teacher/TeacherProxyAlerts';
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -75,6 +76,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/teacher" element={<ProtectedRoute allowedRole="teacher"><TeacherDashboard /></ProtectedRoute>} />
       <Route path="/teacher/generate-qr" element={<ProtectedRoute allowedRole="teacher"><GenerateQR /></ProtectedRoute>} />
       <Route path="/teacher/attendance" element={<ProtectedRoute allowedRole="teacher"><TeacherAttendance /></ProtectedRoute>} />
+      <Route path="/teacher/proxy-alerts" element={<ProtectedRoute allowedRole="teacher"><TeacherProxyAlerts /></ProtectedRoute>} />
       <Route path="/teacher/reports" element={<ProtectedRoute allowedRole="teacher"><TeacherReports /></ProtectedRoute>} />
 
       {/* Student Routes */}
