@@ -6,6 +6,17 @@ A professional, high-performance **QR code-based attendance management system** 
 
 ---
 
+## 🛡️ Anti-Proxy Protection System
+
+QR Attend features a **4-layer security architecture** to ensure attendance integrity and eliminate proxy marking.
+
+*   **⚡ 5s QR Rotation:** QR codes automatically rotate every **5 seconds**. Screenshots and photo-sharing are rendered useless as the token expires before it can be shared.
+*   **📱 Device Locking:** Each student's account is **permanently linked** to the first phone they use to scan. Only that specific device can mark attendance for their account.
+*   **🔍 Same-Device Detection:** The system fingerprints every device. If one phone tries to mark attendance for multiple students, it's instantly flagged.
+*   **📊 Violation Logging:** Unauthorized attempts (wrong device, expired QR, etc.) are logged with full details for Admin and Teacher review.
+
+---
+
 ## ✨ Overview
 
 QR Attend revolutionizes the traditional attendance process by replacing manual registers and paper sheets with a secure, digital-first approach. It features dedicated portals for **Administrators**, **Faculty**, and **Students**, all wrapped in a premium **Glassmorphism** design system with support for both **Dark** and **Light** modes.
@@ -19,23 +30,24 @@ QR Attend revolutionizes the traditional attendance process by replacing manual 
 ## 🚀 Role-Based Features
 
 ### 👨‍💼 Administrator Portal (Command Center)
-*   **Intelligent Dashboard:** Zero-effort overview of institution health, including global attendance rates and active sessions.
-*   **User Management:** Centralized control over Teacher and Student accounts with automated ID generation.
+*   **Live Activity Feed:** See real-time attendance scans, session starts, and student registrations.
+*   **Proxy Alert Center:** Monitor all suspicious activity with a dedicated violation tracking dashboard.
+*   **Attendance Filtering:** View records by **Department** or **Teacher** with one-click filtering.
+*   **Device Management:** Reset a student's linked device if they legitimately change their phone.
 *   **Academic Structure:** Manage departments, semesters, classes, and sections with ease.
-*   **Curriculum Mapping:** Assign subjects to specific teachers and link them to class sections.
-*   **Advanced Analytics:** Generate comprehensive attendance reports with CSV export capabilities for institutional audits.
+*   **Advanced Analytics:** Generate comprehensive attendance reports with CSV export capabilities.
 
 ### 👩‍🏫 Faculty Panel (Classroom Management)
 *   **Session Generation:** Create unique, time-bound QR sessions for any assigned subject with a single click.
-*   **Live Tracking:** Watch student attendance populate in real-time as they scan the QR code.
-*   **Security Controls:** Each QR session features an auto-expiry timer (5 minutes) to eliminate proxy attendance.
+*   **Proxy Monitoring:** Receive instant alerts and "Proxy" badges on the live attendance list during sessions.
+*   **Teacher Proxy Alerts:** Dedicated view for violations occurring within the teacher's own subjects.
 *   **Performance Tracking:** Detailed student-wise attendance breakdown with progress visualizations.
 
 ### 👨‍🎓 Student Portal (Personal Attendance)
 *   **Interactive Dashboard:** Visual attendance tracker with animated percentage charts and status cards.
-*   **Smart Scanner:** High-speed QR scanner interface with manual entry fallback for tricky lighting conditions.
-*   **History Logs:** Full transparency into personal attendance records, filtered by subject or status (Present/Absent).
-*   **Real-time Feedback:** Instant confirmation and "Toast" notifications upon successful attendance marking.
+*   **Smart Scanner:** High-speed QR scanner interface with device registration feedback.
+*   **History Logs:** Full transparency into personal attendance records, filtered by subject or status.
+*   **Instant Notifications:** Real-time confirmation for successful scans.
 
 ---
 
@@ -49,15 +61,6 @@ QR Attend revolutionizes the traditional attendance process by replacing manual 
 | **Lucide React** | A consistent, high-quality iconography system for intuitive navigation. |
 | **Vite** | The next-generation build tool for ultra-fast development and optimized bundles. |
 | **CSS3 (Modern)** | Fully custom design system featuring CSS variables, animations, and glassmorphism. |
-
----
-
-## 🔒 Security & Sync
-
-*   **Firebase Realtime DB:** Every attendance scan and session update is synchronized across all devices in milliseconds.
-*   **Automatic Expiry:** QR codes become invalid after 5 minutes, preventing "after-class" scans or photo-sharing attendance.
-*   **Duplicate Prevention:** Sophisticated data validation prevents students from marking attendance multiple times for the same session.
-*   **Persistence Layer:** Combines LocalStorage caching with Cloud persistence for a "Work Anywhere" experience.
 
 ---
 
@@ -79,7 +82,6 @@ cd qr-attend
 npm install
 
 # 4. Create a .env file for Firebase (Optional for local mode)
-# See Firebase documentation to get these keys
 VITE_FIREBASE_API_KEY=your_key
 VITE_FIREBASE_AUTH_DOMAIN=your_domain
 VITE_FIREBASE_DATABASE_URL=your_db_url
@@ -106,32 +108,8 @@ Quick-test the platform using these pre-configured credentials:
 | **Teacher** | `anita@university.edu` | `teacher123` |
 | **Student** | `sanjana@student.edu` | `student123` |
 
-> 💡 **Pro-Tip:** Use the **"Fill Demo Credentials"** button on the login page for instant access!
-
----
-
-## 📁 Project Architecture
-
-```text
-src/
-├── components/     # Reusable UI components (Sidebar, Stats, etc.)
-├── context/        # Global state (Auth, Theme, Notifications)
-├── lib/            # External service integrations (Firebase)
-├── pages/          # Full-page views organized by role
-│   ├── admin/      # Management dashboards
-│   ├── teacher/    # Session generation tools
-│   └── student/    # Scanning and tracking tools
-├── store/          # Data models and CRUD logic
-└── styles/         # Global design system & theme tokens
-```
-
 ---
 
 ## 📜 License
 
 Distributed under the **MIT License**. See `LICENSE` for more information.
-
----
-
-
-
