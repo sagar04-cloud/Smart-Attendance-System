@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Plus, Search, Trash2, Edit3, Mail, Phone, X
+    Plus, Search, Trash2, Edit3, Mail, Phone, X, Eye, EyeOff, Key, Copy, Check
 } from 'lucide-react';
 import {
     User, getUsers, addUser, deleteUser, updateUser, getClasses,
@@ -24,6 +24,9 @@ const ManageUsers: React.FC<ManagePageProps> = ({ role }) => {
         name: '', email: '', password: '', department: '', phone: '',
         classId: '', semester: 1, rollNo: '',
     });
+    const [showPassword, setShowPassword] = useState(false);
+    const [revealedPasswords, setRevealedPasswords] = useState<Set<string>>(new Set());
+    const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const loadData = () => {
         const allUsers = getUsers().filter(u => u.role === role);
@@ -42,6 +45,7 @@ const ManageUsers: React.FC<ManagePageProps> = ({ role }) => {
     const openAdd = () => {
         setEditingUser(null);
         setForm({ name: '', email: '', password: '', department: '', phone: '', classId: '', semester: 1, rollNo: '' });
+        setShowPassword(false);
         setShowModal(true);
     };
 
@@ -57,7 +61,27 @@ const ManageUsers: React.FC<ManagePageProps> = ({ role }) => {
             semester: user.semester || 1,
             rollNo: user.rollNo || '',
         });
+        setShowPassword(false);
         setShowModal(true);
+    };
+
+    const toggleRevealPassword = (userId: string) => {
+        setRevealedPasswords(prev => {
+            const next = new Set(prev);
+            if (next.has(userId)) {
+                next.delete(userId);
+            } else {
+                next.add(userId);
+            }
+            return next;
+        });
+    };
+
+    const copyPassword = (userId: string, password: string) => {
+        navigator.clipboard.writeText(password);
+        setCopiedId(userId);
+        showToast('Password copied to clipboard', 'success');
+        setTimeout(() => setCopiedId(null), 2000);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -151,6 +175,7 @@ const ManageUsers: React.FC<ManagePageProps> = ({ role }) => {
                         <tr>
                             <th>Name</th>
                             <th>Email</th>
+                            <th>Password</th>
                             {role === 'student' && <th>Roll No</th>}
                             <th>Department</th>
                             {role === 'student' && <th>Class</th>}
@@ -162,7 +187,7 @@ const ManageUsers: React.FC<ManagePageProps> = ({ role }) => {
                     <tbody>
                         {filtered.length === 0 ? (
                             <tr>
-                                <td colSpan={role === 'student' ? 8 : 5} style={{ textAlign: 'center', padding: 40 }}>
+                                <td colSpan={role === 'student' ? 9 : 6} style={{ textAlign: 'center', padding: 40 }}>
                                     <div className="empty-state">
                                         <div className="empty-state-icon">👤</div>
                                         <h3>No {role}s found</h3>
@@ -189,6 +214,44 @@ const ManageUsers: React.FC<ManagePageProps> = ({ role }) => {
                                         <td>
                                             <div className="flex items-center gap-2 text-muted">
                                                 <Mail size={14} /> {user.email}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="flex items-center gap-2">
+                                                <code style={{
+                                                    background: 'var(--bg-glass)',
+                                                    padding: '3px 8px',
+                                                    borderRadius: 'var(--radius-sm)',
+                                                    fontSize: 12,
+                                                    fontFamily: 'monospace',
+                                                    letterSpacing: revealedPasswords.has(user.id) ? '0' : '2px',
+                                                    minWidth: 80,
+                                                    display: 'inline-block'
+                                                }}>
+                                                    {revealedPasswords.has(user.id) ? user.password : '••••••••'}
+                                                </code>
+                                                <button
+                                                    className="btn btn-ghost btn-icon"
+                                                    onClick={() => toggleRevealPassword(user.id)}
+                                                    title={revealedPasswords.has(user.id) ? 'Hide password' : 'Show password'}
+                                                    style={{ padding: 4, minWidth: 'auto' }}
+                                                >
+                                                    {revealedPasswords.has(user.id)
+                                                        ? <EyeOff size={14} style={{ color: 'var(--accent-primary-light)' }} />
+                                                        : <Eye size={14} style={{ color: 'var(--text-muted)' }} />
+                                                    }
+                                                </button>
+                                                <button
+                                                    className="btn btn-ghost btn-icon"
+                                                    onClick={() => copyPassword(user.id, user.password)}
+                                                    title="Copy password"
+                                                    style={{ padding: 4, minWidth: 'auto' }}
+                                                >
+                                                    {copiedId === user.id
+                                                        ? <Check size={14} style={{ color: '#10b981' }} />
+                                                        : <Copy size={14} style={{ color: 'var(--text-muted)' }} />
+                                                    }
+                                                </button>
                                             </div>
                                         </td>
                                         {role === 'student' && <td><span className="badge badge-purple">{user.rollNo}</span></td>}
@@ -248,10 +311,42 @@ const ManageUsers: React.FC<ManagePageProps> = ({ role }) => {
 
                                 <div className="form-row">
                                     <div className="form-group">
-                                        <label className="form-label">Password *</label>
-                                        <input className="form-input" type="password" value={form.password}
-                                            onChange={e => setForm({ ...form, password: e.target.value })}
-                                            placeholder="Enter password" />
+                                        <label className="form-label">
+                                            <span className="flex items-center gap-2">
+                                                <Key size={14} /> Password *
+                                            </span>
+                                        </label>
+                                        <div style={{ position: 'relative' }}>
+                                            <input className="form-input"
+                                                type={showPassword ? 'text' : 'password'}
+                                                value={form.password}
+                                                onChange={e => setForm({ ...form, password: e.target.value })}
+                                                placeholder="Enter password"
+                                                style={{ paddingRight: 44 }} />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                style={{
+                                                    position: 'absolute', right: 8, top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    background: 'none', border: 'none',
+                                                    cursor: 'pointer', padding: 4,
+                                                    color: 'var(--text-muted)',
+                                                    display: 'flex', alignItems: 'center'
+                                                }}
+                                                title={showPassword ? 'Hide password' : 'Show password'}
+                                            >
+                                                {showPassword
+                                                    ? <EyeOff size={16} />
+                                                    : <Eye size={16} />
+                                                }
+                                            </button>
+                                        </div>
+                                        {editingUser && (
+                                            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                                                Current password is pre-filled. Change it or leave as-is.
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">Phone</label>
